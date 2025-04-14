@@ -145,7 +145,7 @@ const DUMMY_MATCHES = [
 const ChatItem = ({ item }: { item: any }) => (
   <TouchableOpacity 
     style={styles.chatItem}
-    onPress={() => router.push('/chat-detail')}
+    onPress={() => router.push('/chat-detail' as any)}
   >
     <Image source={item.image} style={styles.avatar} />
     <View style={styles.chatInfo}>
@@ -184,7 +184,7 @@ const MatchItem = ({ item }: { item: any }) => (
     </View>
     <TouchableOpacity 
       style={styles.sayHiButton}
-      onPress={() => router.push('/chat-detail')}
+      onPress={() => router.push('/chat-detail' as any)}
     >
       <Ionicons name="hand-right" size={16} color="#FFFFFF" />
       <Text style={styles.sayHiText}>Say Hi</Text>
@@ -300,7 +300,7 @@ export default function ChatsScreen() {
             ...(regularChats.length > 0 ? [{ type: 'regularHeader' }] : []),
             ...regularChats.map(chat => ({ type: 'chat', data: chat })),
           ]}
-          renderItem={({ item }) => {
+          renderItem={({ item }: { item: any }) => {
             if (item.type === 'pinnedHeader') {
               return (
                 <View style={styles.sectionHeader}>
@@ -317,7 +317,7 @@ export default function ChatsScreen() {
                   <Text style={styles.sectionCount}>{regularChats.length}</Text>
                 </View>
               );
-            } else if (item.type === 'chat' && item.data) {
+            } else if (item.type === 'chat' && 'data' in item) {
               return <ChatItem item={item.data} />;
             }
             return null;

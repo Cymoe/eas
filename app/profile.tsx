@@ -4,6 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import CloseAccountModal from './components/CloseAccountModal';
+import HelpImproveModal from './components/HelpImproveModal';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -16,6 +18,14 @@ export default function ProfileScreen() {
   const [showLikedOnly, setShowLikedOnly] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
   const [autoUpdates, setAutoUpdates] = useState(true);
+  const [closeAccountModalVisible, setCloseAccountModalVisible] = useState(false);
+  const [helpImproveModalVisible, setHelpImproveModalVisible] = useState(false);
+
+  const handleCloseAccount = () => {
+    // Logic to close the account would go here
+    setCloseAccountModalVisible(false);
+    // Optionally navigate to a confirmation screen or show a success message
+  };
 
   return (
     <LinearGradient
@@ -75,14 +85,12 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.boostCard}
+              style={styles.bonusCard}
               onPress={() => router.push('/boosts')}
             >
-              <View style={styles.boostContent}>
-                <Ionicons name="flash" size={24} color="#575093" />
-                <Text style={styles.bonusTitle}>Boosts</Text>
-                <Text style={styles.bonusPrice}>$5/each</Text>
-              </View>
+              <Ionicons name="flash" size={24} color="#575093" />
+              <Text style={styles.bonusTitle}>Boosts</Text>
+              <Text style={styles.bonusPrice}>$5/each</Text>
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
 
@@ -108,7 +116,10 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.settingsContainer}>
-            <TouchableOpacity style={styles.settingCard}>
+            <TouchableOpacity 
+              style={styles.settingCard}
+              onPress={() => router.push('/analytics')}
+            >
               <View style={styles.settingLeft}>
                 <Ionicons name="analytics" size={24} color="#A19375" />
                 <View>
@@ -135,7 +146,10 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingCard}>
+            <TouchableOpacity 
+              style={styles.settingCard}
+              onPress={() => router.push('/change-password')}
+            >
               <View style={styles.settingLeft}>
                 <Ionicons name="key" size={24} color="#A19375" />
                 <Text style={styles.settingTitle}>Change my password</Text>
@@ -158,12 +172,17 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Help Banner */}
-        <View style={styles.helpBanner}>
-          <Text style={styles.helpText}>Help us improve BM</Text>
-          <TouchableOpacity style={styles.startButton}>
-            <Text style={styles.startButtonText}>Start now</Text>
-          </TouchableOpacity>
+        {/* Help Us Improve Section */}
+        <View style={styles.helpImproveSection}>
+          <View style={styles.helpImproveContainer}>
+            <Text style={styles.helpImproveText}>Help us improve BM</Text>
+            <TouchableOpacity 
+              style={styles.startNowButton}
+              onPress={() => setHelpImproveModalVisible(true)}
+            >
+              <Text style={styles.startNowText}>Start now</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Preferences Section */}
@@ -228,7 +247,10 @@ export default function ProfileScreen() {
               />
             </View>
 
-            <TouchableOpacity style={styles.settingCard}>
+            <TouchableOpacity 
+              style={styles.settingCard}
+              onPress={() => router.push('/app-language')}
+            >
               <View style={styles.settingLeft}>
                 <Ionicons name="language" size={24} color="#A19375" />
                 <View>
@@ -268,8 +290,6 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
 
-            <View style={styles.divider} />
-
             <TouchableOpacity style={styles.socialCard}>
               <View style={styles.settingLeft}>
                 <View style={styles.socialIconContainer}>
@@ -280,8 +300,6 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
 
-            <View style={styles.divider} />
-
             <TouchableOpacity style={styles.socialCard}>
               <View style={styles.settingLeft}>
                 <View style={styles.socialIconContainer}>
@@ -291,8 +309,6 @@ export default function ProfileScreen() {
               </View>
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
-
-            <View style={styles.divider} />
 
             <TouchableOpacity style={styles.socialCard}>
               <View style={styles.settingLeft}>
@@ -306,6 +322,24 @@ export default function ProfileScreen() {
               </View>
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
             </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity 
+              style={styles.socialCard}
+              onPress={() => setHelpImproveModalVisible(true)}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.feedbackContainer}>
+                  <Ionicons name="chatbubble-ellipses" size={24} color="#A19375" />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Help us improve</Text>
+                  <Text style={styles.settingSubtitle}>Share your feedback and suggestions</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />
+            </TouchableOpacity>
           </View>
 
           {/* Action Buttons */}
@@ -313,7 +347,10 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.logoutButton}>
               <Text style={styles.logoutText}>Log out</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.closeAccountButton}>
+            <TouchableOpacity 
+              style={styles.closeAccountButton}
+              onPress={() => setCloseAccountModalVisible(true)}
+            >
               <Ionicons name="trash-outline" size={24} color="#F8F9FB" />
               <Text style={styles.closeAccountText}>Close my account</Text>
             </TouchableOpacity>
@@ -325,6 +362,20 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </ScrollView>
+      
+      {/* Close Account Modal */}
+      <CloseAccountModal
+        visible={closeAccountModalVisible}
+        onClose={() => setCloseAccountModalVisible(false)}
+        onCloseAccount={handleCloseAccount}
+      />
+      
+      {/* Help Improve Modal */}
+      <HelpImproveModal
+        visible={helpImproveModalVisible}
+        onClose={() => setHelpImproveModalVisible(false)}
+        userEmail="viktor@gmail.com"
+      />
     </LinearGradient>
   );
 };
@@ -506,6 +557,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#828186',
   },
+  helpImproveSection: {
+    marginVertical: 16,
+  },
+  helpImproveContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(38, 38, 38, 0.5)',
+    borderRadius: 12,
+    padding: 16,
+  },
+  helpImproveText: {
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  startNowButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 9999,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  startNowText: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000000',
+  },
   helpBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -560,10 +639,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#262626',
   },
   ratingContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(161, 147, 117, 0.16)',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  feedbackContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(161, 147, 117, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   actionButtons: {
     gap: 8,
@@ -605,21 +696,5 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.48)',
     textAlign: 'center',
     marginTop: 24,
-  },
-  boostCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#141414',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#262626',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  boostContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
 });
