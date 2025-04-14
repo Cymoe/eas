@@ -15,6 +15,9 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // We'll use SpaceMono as a fallback for now
+    'Abril Fatface': require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Poppins': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   useEffect(() => {
@@ -29,8 +32,48 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack 
+        screenOptions={{
+          headerShown: false,
+          animation: 'none'
+        }}
+      >
+        <Stack.Screen 
+          name="index" 
+          options={{ 
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="(tabs)" 
+          options={{ 
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="profile" 
+          options={{
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="email" 
+          options={{
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="email-verification" 
+          options={{
+            headerShown: false
+          }} 
+        />
+        <Stack.Screen 
+          name="onboarding" 
+          options={{
+            headerShown: false
+          }} 
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

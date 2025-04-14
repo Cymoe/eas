@@ -1,0 +1,1672 @@
+### Example Helper Text States
+
+```jsx
+// Helper Text Examples
+const HelperTextExamples = () => {
+  return (
+    <View style={styles.container}>
+      {/* Normal state */}
+      <View style={styles.helperContainer}>
+        <View style={styles.helperIcon}>
+          <Icon name="info" size={12} color="rgba(255, 255, 255, 0.48)" />
+        </View>
+        <Text style={styles.helperText}>
+          Normal state helper text
+        </Text>
+      </View>
+      
+      {/* Hover state */}
+      <View style={styles.helperContainer}>
+        <View style={styles.helperIcon}>
+          <Icon name="info" size={12} color="rgba(255, 255, 255, 0.64)" />
+        </View>
+        <Text style={[styles.helperText, styles.helperTextHovered]}>
+          Hover state helper text
+        </Text>
+      </View>
+      
+      {/* Active state */}
+      <View style={styles.helperContainer}>
+        <View style={styles.helperIcon}>
+          <Icon name="info" size={12} color="#FFFFFF" />
+        </View>
+        <Text style={[styles.helperText, styles.helperTextActive]}>
+          Active state helper text
+        </Text>
+      </View>
+      
+      {/* Valid state */}
+      <View style={styles.helperContainer}>
+        <View style={styles.helperIcon}>
+          <Icon name="check-circle" size={12} color="#6BFF90" />
+        </View>
+        <Text style={[styles.helperText, styles.validText]}>
+          Valid state helper text
+        </Text>
+      </View>
+      
+      {/* Invalid state */}
+      <View style={styles.helperContainer}>
+        <View style={styles.helperIcon}>
+          <Icon name="error" size={12} color="#F41857" />
+        </View>
+        <Text style={[styles.helperText, styles.errorText]}>
+          Invalid state helper text
+        </Text>
+      </View>
+    </View>
+  );
+};# WindSurf Design System
+
+This document contains all design specifications, implementation guidelines, and usage instructions for the WindSurf design system.
+
+## Table of Contents
+1. [Design Specifications](#design-specifications)
+2. [Implementation Guidelines](#implementation-guidelines)
+3. [Cursor Usage Instructions](#cursor-usage-instructions)
+
+---
+
+## Design Specifications
+
+### Color System
+- **Accent**: #FF3B30 (Main brand color)
+- **White**: #FFFFFF
+- **Night**: #121212
+- **Red Flag (Warning)**: #F41857
+- **Green Flag (Safe)**: #6BFF90
+- **Orange Flag (Caution)**: #FFA726
+
+### Opacity Levels
+- **Active**: 100% Opacity
+- **Inactive**: 48% Opacity
+- **Hovered**: 64% Opacity
+- **Background Normal**: 8% Opacity
+- **Background Hover**: 16% Opacity
+
+### Typography
+- **Text ≥20px**: 
+  ```css
+  font-family: 'Abril Fatface';
+  font-style: normal;
+  font-weight: 400;
+  line-height: 104%;
+  ```
+- **Text ≤18px**: 
+  ```css
+  font-family: 'Poppins';
+  font-style: normal;
+  ```
+- **"WindSurf"**: Always medium weight, 100% opacity
+
+### Input Fields
+- **Height**: Fixed at 40px
+- **Border Radius**: 12px on all corners
+- **Background**: White with 8% opacity (normal), 16% opacity (hover)
+- **Backdrop Filter**: blur(16px)
+- **Padding**: 12px on both left and right sides
+- **Label**: 14px uppercase, medium weight, 48% opacity
+- **Helper Text**: 12px, 8px spacing below input
+
+### Buttons & Interactive Elements
+- **ALL buttons MUST BE fully rounded** (borderRadius: 9999)
+- **Height**: 48px standard, 40px compact
+- **Padding**: 16px horizontal padding minimum
+- **Font**: 16px for standard buttons, 14px for compact
+
+### Tabs
+- **ALL tabs MUST BE fully rounded** (borderRadius: 9999)
+- **Height**: 28px MAX
+- **Padding**: 10px padding on left and right sides
+- **Font**: 12px regular when inactive, medium when active/hovered
+
+### Cards & Containers
+- **ALL cards MUST have maximum 12px corner radius**
+- **Background**: Night (#121212) or White with 8% opacity
+- **Backdrop Filter**: blur(16px)
+- **Padding**: 16px standard
+
+### Lists & Repeating Groups
+- **ALL repeating groups** (vertical or horizontal) MUST be Scroll and Snap
+- **Spacing**: 8px gap between all cards inside repeating groups
+
+### Wave Element Styling
+- **Wave decorations**: Use SVG with Accent color (#FF3B30)
+- **Flow indicators**: Use directional arrows with Accent color at 64% opacity
+- **Wind strength indicators**: Use Accent color with varying opacity levels
+
+### Water-Resistance Levels
+- **Splash-proof elements**: 1px border with Accent color at 16% opacity
+- **Water-resistant elements**: 2px border with Accent color at 32% opacity 
+- **Waterproof elements**: No border, solid Accent color background
+
+---
+
+## Implementation Guidelines
+
+### Core Design System Code
+
+```javascript
+// windsurf-design-system.js
+export const colors = {
+  // Primary Colors
+  accent: '#FF3B30',
+  white: '#FFFFFF',
+  night: '#121212',
+  redFlag: '#F41857',
+  greenFlag: '#6BFF90',
+  orangeFlag: '#FFA726',
+  
+  // Opacity Functions
+  withOpacity: (color, opacity) => {
+    // Convert hex to rgba
+    let r, g, b;
+    if (color.length === 7) {
+      r = parseInt(color.substring(1, 3), 16);
+      g = parseInt(color.substring(3, 5), 16);
+      b = parseInt(color.substring(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+    return color;
+  },
+  
+  // Opacity Levels
+  opacityActive: 1,
+  opacityInactive: 0.48,
+  opacityHovered: 0.64,
+  opacityBgNormal: 0.08,
+  opacityBgHover: 0.16,
+};
+
+export const typography = {
+  getTextStyle: (size) => {
+    if (size >= 20) {
+      return {
+        fontFamily: 'Abril Fatface',
+        fontWeight: '400',
+        lineHeight: '104%',
+      };
+    } else {
+      return {
+        fontFamily: 'Poppins',
+      };
+    }
+  },
+  
+  processBrandName: (text) => {
+    if (typeof text !== 'string') return text;
+    return text.replace(/WindSurf/g, (match) => {
+      // Special handling for "WindSurf"
+      return `<strong style="fontWeight: 500; opacity: 1;">${match}</strong>`;
+    });
+  }
+};
+
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 40,
+  xxxl: 56,
+  
+  // Repeating elements
+  repeatingGroupGap: 8,
+  
+  // Border radius
+  borderRadius: {
+    sm: 4,
+    base: 8,
+    max: 12,
+    full: 9999
+  }
+};
+
+export const componentStyles = {
+  // Button styles
+  button: {
+    base: {
+      borderRadius: spacing.borderRadius.full,
+      height: 48,
+      paddingHorizontal: 16,
+    },
+    compact: {
+      height: 40,
+    },
+  },
+  
+  // Tab styles
+  tab: {
+    base: {
+      height: 28,
+      paddingHorizontal: 10,
+      borderRadius: spacing.borderRadius.full,
+    },
+    active: {
+      fontWeight: '500',
+    },
+    inactive: {
+      fontWeight: '400',
+    },
+  },
+  
+  // Card styles
+  card: {
+    base: {
+      borderRadius: spacing.borderRadius.max,
+      padding: 16,
+      backdropFilter: 'blur(16px)',
+    },
+  },
+  
+  // Input styles
+  input: {
+    base: {
+      height: 40,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      backdropFilter: 'blur(16px)',
+    },
+  },
+};
+```
+
+### Component Implementations
+
+#### Button Component
+
+```jsx
+// Button.js
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { colors, componentStyles } from '../windsurf-design-system';
+
+export const Button = ({
+  label,
+  onPress,
+  type = 'primary',
+  compact = false,
+  disabled = false,
+}) => {
+  const getBackgroundColor = () => {
+    if (disabled) {
+      return colors.withOpacity(colors.accent, colors.opacityInactive);
+    }
+    switch (type) {
+      case 'primary':
+        return colors.accent;
+      case 'secondary':
+        return 'transparent';
+      default:
+        return colors.accent;
+    }
+  };
+  
+  const getBorderColor = () => {
+    if (type === 'secondary') {
+      return colors.withOpacity(colors.white, colors.opacityInactive);
+    }
+    return null;
+  };
+  
+  return (
+    <TouchableOpacity
+      style={[
+        styles.button,
+        compact ? styles.buttonCompact : null,
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          borderWidth: type === 'secondary' ? 1 : 0,
+        },
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          styles.label,
+          compact ? styles.labelCompact : null,
+          { color: colors.white },
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    ...componentStyles.button.base,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonCompact: {
+    ...componentStyles.button.compact,
+  },
+  label: {
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  labelCompact: {
+    fontSize: 14,
+  },
+});
+```
+
+#### Card Component
+
+```jsx
+// Card.js
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { BlurView } from '@react-native-community/blur';
+import { colors, componentStyles } from '../windsurf-design-system';
+
+export const Card = ({ children, style }) => {
+  return (
+    <View style={[styles.cardOuter, style]}>
+      <BlurView
+        style={styles.blurView}
+        blurType="dark"
+        blurAmount={16}
+        reducedTransparencyFallbackColor={colors.withOpacity(colors.night, colors.opacityBgNormal)}
+      />
+      <View style={styles.cardInner}>
+        {children}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  cardOuter: {
+    ...componentStyles.card.base,
+    overflow: 'hidden',
+    backgroundColor: colors.withOpacity(colors.white, colors.opacityBgNormal),
+  },
+  blurView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  cardInner: {
+    position: 'relative',
+  },
+});
+```
+
+#### Input Component
+
+```jsx
+// Input.js
+import React from 'react';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { BlurView } from '@react-native-community/blur';
+import { colors, componentStyles } from '../windsurf-design-system';
+
+export const Input = ({ 
+  label, 
+  value, 
+  onChangeText, 
+  placeholder,
+  helperText,
+  validationState, // 'normal', 'valid', 'invalid'
+  hoverState, // boolean
+  activeState, // boolean
+  helperIcon, // icon name
+}) => {
+  return (
+    <View style={styles.container}>
+      {label && (
+        <Text style={styles.label}>{label}</Text>
+      )}
+      <View style={styles.inputOuter}>
+        <BlurView
+          style={styles.blurView}
+          blurType="dark"
+          blurAmount={16}
+          reducedTransparencyFallbackColor={colors.withOpacity(colors.white, colors.opacityBgNormal)}
+        />
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.withOpacity(colors.white, colors.opacityInactive)}
+        />
+      </View>
+      {helperText && (
+        <View style={styles.helperContainer}>
+          {helperIcon && (
+            <View style={styles.helperIcon}>
+              <Icon 
+                name={helperIcon} 
+                size={12} 
+                color={getHelperColor(validationState, hoverState, activeState)} 
+              />
+            </View>
+          )}
+          <Text style={[
+            styles.helperText,
+            hoverState && styles.helperTextHovered,
+            activeState && styles.helperTextActive,
+            validationState === 'valid' && styles.validText,
+            validationState === 'invalid' && styles.errorText,
+          ]}>
+            {helperText}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+// Helper function to get the appropriate color based on state
+const getHelperColor = (validationState, hoverState, activeState) => {
+  if (validationState === 'valid') return colors.greenFlag;
+  if (validationState === 'invalid') return colors.redFlag;
+  if (activeState) return colors.white;
+  if (hoverState) return colors.withOpacity(colors.white, colors.opacityHovered);
+  return colors.withOpacity(colors.white, colors.opacityInactive);
+};
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+  label: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    color: colors.withOpacity(colors.white, colors.opacityInactive),
+  },
+  inputOuter: {
+    ...componentStyles.input.base,
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: colors.withOpacity(colors.white, colors.opacityBgNormal),
+  },
+  blurView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  input: {
+    flex: 1,
+    fontFamily: 'Poppins',
+    color: colors.white,
+    fontSize: 16,
+    height: '100%',
+  },
+  helperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  helperText: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: colors.withOpacity(colors.white, colors.opacityInactive),
+  },
+  helperTextHovered: {
+    color: colors.withOpacity(colors.white, colors.opacityHovered),
+  },
+  helperTextActive: {
+    color: colors.white,
+  },
+  validText: {
+    color: colors.greenFlag,
+  },
+  errorText: {
+    color: colors.redFlag,
+  },
+  helperIcon: {
+    width: 12,
+    height: 12,
+    marginRight: 4,
+  },
+});
+```
+
+#### Tabs Component
+
+```jsx
+// Tabs.js
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { colors, componentStyles, spacing } from '../windsurf-design-system';
+
+export const Tabs = ({ tabs, activeTab, onTabPress }) => {
+  return (
+    <ScrollView 
+      horizontal 
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+    >
+      {tabs.map((tab, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.tab,
+            activeTab === index ? styles.activeTab : null,
+          ]}
+          onPress={() => onTabPress(index)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === index ? styles.activeTabText : null,
+            ]}
+          >
+            {tab}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    gap: spacing.repeatingGroupGap,
+  },
+  tab: {
+    ...componentStyles.tab.base,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  activeTab: {
+    backgroundColor: colors.withOpacity(colors.accent, colors.opacityBgHover),
+  },
+  tabText: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: colors.withOpacity(colors.white, colors.opacityInactive),
+    ...componentStyles.tab.inactive,
+  },
+  activeTabText: {
+    color: colors.white,
+    ...componentStyles.tab.active,
+  },
+});
+```
+
+#### Repeating List Component
+
+```jsx
+// HorizontalCardList.js
+import React from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { spacing } from '../windsurf-design-system';
+
+export const HorizontalCardList = ({ 
+  data, 
+  renderItem, 
+  keyExtractor,
+  cardWidth = 280,
+}) => {
+  return (
+    <FlatList
+      horizontal
+      data={data}
+      renderItem={({ item, index }) => (
+        <View style={[
+          styles.cardWrapper,
+          { width: cardWidth },
+        ]}>
+          {renderItem({ item, index })}
+        </View>
+      )}
+      keyExtractor={keyExtractor}
+      showsHorizontalScrollIndicator={false}
+      snapToInterval={cardWidth + spacing.repeatingGroupGap} // Card width + gap
+      snapToAlignment="start"
+      decelerationRate="fast"
+      contentContainerStyle={styles.container}
+    />
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  cardWrapper: {
+    marginRight: spacing.repeatingGroupGap, // 8px gap between cards
+  },
+});
+```
+
+### Required Packages
+
+```bash
+# Install required dependencies
+npm install @react-native-community/blur react-native-vector-icons
+```
+
+### Font Setup
+
+For iOS (in your Podfile):
+```ruby
+target 'YourApp' do
+  # Add the font files to the "Resources" Build Phase
+  font_dir = "../assets/fonts"
+  font_files = Dir.glob("#{font_dir}/*.ttf")
+  font_files.each { |font_file| pod 'gRPC-Core', :path => font_file }
+end
+```
+
+For Android (in android/app/build.gradle):
+```gradle
+project.ext.vectoricons = [
+    iconFontNames: [ 'AbrilFatface-Regular.ttf', 'Poppins-Regular.ttf', 'Poppins-Medium.ttf' ]
+]
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+```
+
+---
+
+## Cursor Usage Instructions
+
+### Essential Cursor Prompts
+
+When asking Cursor to generate code, use these prompts:
+
+#### Basic Component Template
+
+```
+Using the WindSurf design system, create a [component type]. Remember:
+- Accent color (#FF3B30)
+- Fully rounded buttons (borderRadius: 9999)
+- Cards with maximum 12px border radius
+- Backdrop blur (16px) for inputs and cards
+- Abril Fatface font for text ≥20px
+- Poppins font for text ≤18px
+- 8px gap between items in lists with snap scrolling
+
+AVOID:
+- Square corners on buttons or tabs
+- Any colors outside our palette
+- System fonts or other font families
+- Cards without backdrop blur
+- Non-snap scrolling lists
+```
+
+#### Screen Template
+
+```
+Create a WindSurf-compliant screen for [purpose] with these features:
+[list features]
+
+Remember our core design rules:
+- Only use WindSurf colors (Accent #FF3B30, White, Night, etc.)
+- Buttons and tabs must be fully rounded
+- Cards must have maximum 12px corner radius
+- Text ≥20px needs Abril Fatface font
+- Text ≤18px needs Poppins font
+
+PROHIBITED:
+- Material Design patterns
+- Custom hex colors
+- System fonts
+- Square buttons
+- Cards without backdrop blur
+- Custom shadows
+```
+
+#### Component Fixes
+
+```
+Fix this component to comply with WindSurf design standards:
+- Replace any non-compliant colors with our palette (Accent: #FF3B30)
+- Ensure buttons are fully rounded (borderRadius: 9999)
+- Apply backdrop-filter: blur(16px) where needed
+- Use Abril Fatface for text ≥20px
+- Use Poppins for text ≤18px
+
+CRITICAL VIOLATIONS TO FIX:
+- Square corners on buttons (must use borderRadius: 9999)
+- Non-system fonts (replace with Abril Fatface or Poppins)
+- Custom colors (use only WindSurf palette)
+- Missing blur effects
+- Incorrect spacing values
+
+[paste code here]
+```
+
+### Cursor Snippets
+
+Create these snippets in Cursor for quick access:
+
+#### WindSurf Colors
+
+```javascript
+// WindSurf Colors
+const colors = {
+  accent: '#FF3B30',
+  white: '#FFFFFF',
+  night: '#121212',
+  redFlag: '#F41857',
+  greenFlag: '#6BFF90',
+  orangeFlag: '#FFA726',
+};
+```
+
+#### WindSurf Button
+
+```jsx
+// WindSurf Button (fully rounded)
+<TouchableOpacity
+  style={{
+    backgroundColor: '#FF3B30',
+    borderRadius: 9999,
+    height: 48,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}
+  onPress={() => {}}
+>
+  <Text style={{ 
+    fontFamily: 'Poppins',
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '500' 
+  }}>
+    Button Text
+  </Text>
+</TouchableOpacity>
+```
+
+#### WindSurf Card
+
+```jsx
+// WindSurf Card (max 12px radius with blur)
+<View style={{
+  borderRadius: 12,
+  overflow: 'hidden',
+  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+}}>
+  <BlurView
+    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+    blurType="dark"
+    blurAmount={16}
+  />
+  <View style={{ padding: 16 }}>
+    {/* Card content here */}
+  </View>
+</View>
+```
+
+#### WindSurf Typography
+
+```jsx
+// WindSurf Large Typography (≥20px)
+<Text style={{
+  fontFamily: 'Abril Fatface',
+  fontWeight: '400',
+  fontSize: 24,
+  lineHeight: 24 * 1.04,
+  color: '#FFFFFF',
+}}>
+  Large Text
+</Text>
+
+// WindSurf Regular Typography (≤18px)
+<Text style={{
+  fontFamily: 'Poppins',
+  fontWeight: '400',
+  fontSize: 16,
+  color: '#FFFFFF',
+}}>
+  Regular Text
+</Text>
+```
+
+### Design System Reminders
+
+Use these reminders when working with Cursor:
+
+1. **Color System**: Only use the 6 defined colors (Accent #FF3B30, White, Night, Red Flag, Green Flag, Orange Flag)
+
+2. **Opacity Rules**: Apply opacity levels consistently (Active: 100%, Inactive: 48%, Hover: 64%)
+
+3. **Typography**:
+   - Text ≥20px must use Abril Fatface with 104% line height
+   - Text ≤18px must use Poppins font
+
+4. **Border Radius**:
+   - Buttons and tabs: Fully rounded (9999)
+   - Cards: Maximum 12px
+   - Inputs: 12px
+
+5. **Backdrop Blur**: All inputs and cards must have backdrop-filter: blur(16px)
+
+6. **Spacing**: 8px gap between repeating elements with snap scrolling
+
+## Component Examples
+
+### OTP Input Field
+
+The OTP (One-Time Password) Input Field is a specialized component for verification codes with multiple individual digit inputs.
+
+#### Visual Specification
+
+```
+┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+│   1  │ │   2  │ │   3  │ │   4  │ │   5  │
+└──────┘ └──────┘ └──────┘ └──────┘ └──────┘
+     ℹ️ Agree.
+```
+
+#### Component Style Rules
+
+- **Container**:
+  - Flexible layout with equal-width fields
+  - 8px gap between individual inputs
+  - 12px gap between input row and helper text
+
+- **Individual Input Fields**:
+  - Size: Equal width (typically 44-60px), height: 44px
+  - Background: #262626 (inactive), #FFFFFF (active/selected)
+  - Border Radius: 12px for all corners
+  - Text: Poppins, 16px, 600 weight
+  - Text Color: #FFFFFF (inactive), #121212 (active/selected)
+  - Padding: 12px around content
+  - Centered text alignment
+
+- **Helper Text**:
+  - Follows standard helper text styling
+  - Uses icon + text pattern with 4px gap
+  - Font: Poppins, 12px, 300 weight
+  - Color: #FFFFFF or opacity variants based on state
+
+#### React Native Implementation
+
+```jsx
+// OTPInput.js
+import React, { useState, useRef, useEffect } from 'react';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { colors } from '../windsurf-design-system';
+
+export const OTPInput = ({
+  length = 5,
+  value,
+  onChange,
+  helperText,
+  helperIcon,
+}) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRefs = useRef([]);
+  
+  useEffect(() => {
+    // Initialize refs array with the correct length
+    inputRefs.current = inputRefs.current.slice(0, length);
+    
+    // Focus first input on mount
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, [length]);
+  
+  // Handle input change for a specific index
+  const handleChange = (text, index) => {
+    const newValue = value ? value.split('') : Array(length).fill('');
+    
+    // Only accept single digits
+    if (text.length > 0) {
+      const lastChar = text[text.length - 1];
+      newValue[index] = lastChar;
+      
+      // Move to next input if available
+      if (index < length - 1) {
+        inputRefs.current[index + 1].focus();
+        setActiveIndex(index + 1);
+      }
+    } else {
+      newValue[index] = '';
+    }
+    
+    onChange(newValue.join(''));
+  };
+  
+  // Handle backspace key press
+  const handleKeyPress = (e, index) => {
+    if (e.nativeEvent.key === 'Backspace' && index > 0 && !value[index]) {
+      inputRefs.current[index - 1].focus();
+      setActiveIndex(index - 1);
+    }
+  };
+  
+  return (
+    <View style={styles.container}>
+      <View style={styles.inputsContainer}>
+        {Array(length).fill(0).map((_, index) => (
+          <TextInput
+            key={index}
+            ref={ref => {
+              if (ref) inputRefs.current[index] = ref;
+            }}
+            style={[
+              styles.input,
+              activeIndex === index && styles.activeInput,
+              activeIndex === index && styles.activeInputText,
+            ]}
+            value={value?.[index] || ''}
+            onChangeText={text => handleChange(text, index)}
+            onKeyPress={e => handleKeyPress(e, index)}
+            onFocus={() => setActiveIndex(index)}
+            maxLength={1}
+            keyboardType="numeric"
+            textAlign="center"
+          />
+        ))}
+      </View>
+      
+      {helperText && (
+        <View style={styles.helperContainer}>
+          {helperIcon && (
+            <Icon 
+              name={helperIcon}
+              size={12}
+              color="#FFFFFF"
+              style={styles.helperIcon}
+            />
+          )}
+          <Text style={styles.helperText}>{helperText}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    gap: 12,
+  },
+  inputsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    width: '100%',
+  },
+  input: {
+    height: 44,
+    flex: 1,
+    backgroundColor: '#262626',
+    borderRadius: 12,
+    fontFamily: 'Poppins',
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    padding: 12,
+  },
+  activeInput: {
+    backgroundColor: '#FFFFFF',
+  },
+  activeInputText: {
+    color: '#121212',
+  },
+  helperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  helperIcon: {
+    width: 12,
+    height: 12,
+    marginRight: 4,
+  },
+  helperText: {
+    fontFamily: 'Poppins',
+    fontWeight: '300',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#FFFFFF',
+  },
+});
+```
+
+### Modal Dialog with Options
+
+The Modal Dialog with Options component provides a standardized way to present choices to users in a modal overlay.
+
+#### Visual Specification
+
+```
+┌─────────────────────────────────────────┐
+│ Help us improve BandMate                │
+│                                         │
+│ Let us know how we can improve your     │
+│ experience on BandMate                  │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ e.g. I have an thought about...     │ │
+│ └─────────────────────────────────────┘ │
+│ ℹ️ Maximum 0/500 characters.            │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ 📧 Ask to reset my password         │ │
+│ │ A verification code will be sent    │ │
+│ │ abc@gmail.com to reset your password│ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Keep trying                         │ │
+│ │ Try again but with a new password.  │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ Yes, report this musician           │ │
+│ │ Select a reason why and motivate it.│ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+#### Component Style Rules
+
+- **Modal Container**:
+  - Background: rgba(18, 18, 18, 0.48) with backdrop-filter: blur(16px)
+  - Padding: 10px 10px 50px
+  - Flexible height and width
+
+- **Modal Card**:
+  - Background: rgba(18, 18, 18, 0.8) with backdrop-filter: blur(16px)
+  - Border Radius: 12px
+  - Padding: 16px 12px 12px
+  - Gap between sections: 16px
+
+- **Header/Title**:
+  - Font: Poppins, 16px, 600 weight
+  - Color: #FFFFFF
+  - Letter spacing: -0.5px
+
+- **Description/Subtitle**:
+  - Font: Poppins, 17px, 500 weight
+  - Color: #FFFFFF
+  - Line height: 125%
+  - Letter spacing: -0.5px
+
+- **Option Items**:
+  - Background: #262626
+  - Border Radius: 4px
+  - Padding: 12px
+  - Gap between title and description: 8px
+  
+  - Title:
+    - Font: Poppins, 16px, 600 weight
+    - Color: #FFFFFF
+    - Letter spacing: -0.5px
+  
+  - Description:
+    - Font: Poppins, 14px, 400 weight
+    - Color: rgba(255, 255, 255, 0.48)
+    - Line height: 120%
+    - Letter spacing: -0.5px
+
+- **Text Input**:
+  - Background: rgba(255, 255, 255, 0.08)
+  - Border Radius: 12px
+  - Padding: 12px
+  - Font: Poppins, 16px
+  - Placeholder Color: rgba(255, 255, 255, 0.48)
+
+- **Close Button**:
+  - Size: 48px x 48px
+  - Background: rgba(255, 255, 255, 0.16)
+  - Border Radius: 100px (fully rounded)
+  - Icon: 24px x 24px, white
+
+#### React Native Implementation
+
+```jsx
+// ModalDialog.js
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { BlurView } from '@react-native-community/blur';
+
+export const ModalDialog = ({
+  visible,
+  onClose,
+  title,
+  description,
+  options = [],
+  showTextInput = false,
+  textInputPlaceholder = '',
+  textInputValue = '',
+  onTextInputChange,
+  maxCharCount = 500,
+}) => {
+  if (!visible) return null;
+  
+  return (
+    <View style={styles.modalOverlay}>
+      <BlurView
+        style={StyleSheet.absoluteFill}
+        blurType="dark"
+        blurAmount={16}
+      />
+      
+      <View style={styles.modalContainer}>
+        <View style={styles.modalCard}>
+          {/* Header */}
+          {title && (
+            <Text style={styles.title}>{title}</Text>
+          )}
+          
+          {/* Description */}
+          {description && (
+            <Text style={styles.description}>{description}</Text>
+          )}
+          
+          {/* Text Input */}
+          {showTextInput && (
+            <View style={styles.textInputSection}>
+              <TextInput
+                style={styles.textInput}
+                placeholder={textInputPlaceholder}
+                placeholderTextColor="rgba(255, 255, 255, 0.48)"
+                value={textInputValue}
+                onChangeText={onTextInputChange}
+                multiline
+              />
+              
+              <View style={styles.helperContainer}>
+                <Icon 
+                  name="info"
+                  size={12}
+                  color="rgba(255, 255, 255, 0.48)"
+                  style={styles.helperIcon}
+                />
+                <Text style={styles.helperText}>
+                  Maximum {textInputValue?.length || 0}/{maxCharCount} characters.
+                </Text>
+              </View>
+            </View>
+          )}
+          
+          {/* Options */}
+          <ScrollView style={styles.optionsContainer}>
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.optionItem}
+                onPress={() => option.onPress && option.onPress()}
+              >
+                {option.icon && (
+                  <Icon 
+                    name={option.icon} 
+                    size={24} 
+                    color="#FFFFFF" 
+                    style={styles.optionIcon}
+                  />
+                )}
+                
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>{option.title}</Text>
+                  {option.description && (
+                    <Text style={styles.optionDescription}>{option.description}</Text>
+                  )}
+                </View>
+                
+                {option.showArrow && (
+                  <Icon 
+                    name="chevron-right" 
+                    size={24} 
+                    color="#F8F9FB" 
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+        
+        {/* Close Button */}
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Icon name="close" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(18, 18, 18, 0.48)',
+  },
+  modalContainer: {
+    width: '100%',
+    height: '100%',
+    padding: 10,
+    paddingBottom: 50,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '100%',
+    padding: 16,
+    paddingBottom: 12,
+    backgroundColor: 'rgba(18, 18, 18, 0.8)',
+    borderRadius: 12,
+    gap: 16,
+  },
+  title: {
+    fontFamily: 'Poppins',
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 19,
+    letterSpacing: -0.5,
+    color: '#FFFFFF',
+  },
+  description: {
+    fontFamily: 'Poppins',
+    fontWeight: '500',
+    fontSize: 17,
+    lineHeight: '125%',
+    letterSpacing: -0.5,
+    color: '#FFFFFF',
+  },
+  textInputSection: {
+    gap: 8,
+  },
+  textInput: {
+    width: '100%',
+    height: 104,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 12,
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  helperContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  helperIcon: {
+    width: 12,
+    height: 12,
+    marginRight: 4,
+  },
+  helperText: {
+    fontFamily: 'Poppins',
+    fontWeight: '300',
+    fontSize: 12,
+    lineHeight: 18,
+    color: 'rgba(255, 255, 255, 0.48)',
+  },
+  optionsContainer: {
+    width: '100%',
+    maxHeight: 265,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#262626',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  optionIcon: {
+    marginRight: 8,
+  },
+  optionTextContainer: {
+    flex: 1,
+    gap: 8,
+  },
+  optionTitle: {
+    fontFamily: 'Poppins',
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 19,
+    letterSpacing: -0.5,
+    color: '#FFFFFF',
+  },
+  optionDescription: {
+    fontFamily: 'Poppins',
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: '120%',
+    letterSpacing: -0.5,
+    color: 'rgba(255, 255, 255, 0.48)',
+  },
+  closeButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+});
+```
+
+### Range Progress Bar
+
+The Range Progress Bar is a dual-handle slider component used for selecting a range of values with minimum and maximum indicators.
+
+#### Visual Specification
+
+```
+┌───────────────────────────────────────────────────┐
+│                                                   │
+│  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━●     │
+│                                                   │
+│  18 yrs                                  99 yrs   │
+└───────────────────────────────────────────────────┘
+```
+
+#### Component Style Rules
+
+- **Track (Inactive)**:
+  - Height: 4px
+  - Background: White with 20% opacity
+  - Border Radius: 2px
+
+- **Track (Active)**:
+  - Height: 4px
+  - Background: White at 100% opacity
+  - Position: Absolute
+
+- **Cursors/Handles**:
+  - Size: 12px × 12px
+  - Background: White at 100% opacity
+  - Border Radius: Fully rounded (circle)
+  - Position: Centered vertically on track (-4px top offset)
+
+- **Helper Text**:
+  - Font: Poppins, 12px, medium weight (500)
+  - Color: #DEDEDE with 60% opacity
+  - Spacing: 12px gap between track and helper text
+  - Alignment: Left for minimum value, Right for maximum value
+
+#### React Native Implementation
+
+```jsx
+// RangeSlider.js
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, PanResponder, Animated } from 'react-native';
+import { colors } from '../windsurf-design-system';
+
+export const RangeSlider = ({
+  minimumValue = 18,
+  maximumValue = 99,
+  initialMinimum = 18,
+  initialMaximum = 99,
+  step = 1,
+  onValueChange,
+  minLabel = "18 yrs",
+  maxLabel = "99 yrs",
+  width = 351,
+}) => {
+  const [sliderWidth, setSliderWidth] = useState(width);
+  const [minValue, setMinValue] = useState(initialMinimum);
+  const [maxValue, setMaxValue] = useState(initialMaximum);
+  
+  // Animations for smooth movement
+  const minHandlePosition = new Animated.Value(0);
+  const maxHandlePosition = new Animated.Value(sliderWidth);
+  
+  useEffect(() => {
+    // Calculate positions based on values
+    const range = maximumValue - minimumValue;
+    const minPos = ((minValue - minimumValue) / range) * sliderWidth;
+    const maxPos = ((maxValue - minimumValue) / range) * sliderWidth;
+    
+    minHandlePosition.setValue(minPos);
+    maxHandlePosition.setValue(maxPos);
+  }, [minValue, maxValue, sliderWidth, minimumValue, maximumValue]);
+  
+  // Create pan responders for both handles
+  const createPanResponder = (isMin) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        const position = isMin ? minHandlePosition : maxHandlePosition;
+        const otherPosition = isMin ? maxHandlePosition : minHandlePosition;
+        const posValue = isMin ? minValue : maxValue;
+        const otherValue = isMin ? maxValue : minValue;
+        
+        // Calculate new position
+        let newPosition = isMin ? 
+          gestureState.moveX - gestureState.x0 + position._value :
+          gestureState.moveX - gestureState.x0 + position._value;
+        
+        // Constrain position within bounds
+        newPosition = Math.max(0, Math.min(newPosition, sliderWidth));
+        
+        // Prevent handles from crossing
+        if (isMin && newPosition > otherPosition._value) {
+          newPosition = otherPosition._value;
+        } else if (!isMin && newPosition < otherPosition._value) {
+          newPosition = otherPosition._value;
+        }
+        
+        // Update position
+        position.setValue(newPosition);
+        
+        // Calculate and update value
+        const range = maximumValue - minimumValue;
+        const newValue = Math.round((newPosition / sliderWidth) * range / step) * step + minimumValue;
+        
+        if (isMin) {
+          setMinValue(newValue);
+        } else {
+          setMaxValue(newValue);
+        }
+        
+        // Notify caller
+        if (onValueChange) {
+          onValueChange(isMin ? newValue : minValue, isMin ? maxValue : newValue);
+        }
+      },
+    });
+  };
+  
+  const minPanResponder = createPanResponder(true);
+  const maxPanResponder = createPanResponder(false);
+  
+  // Calculate active track width and position
+  const activeTrackPosition = minHandlePosition;
+  const activeTrackWidth = Animated.subtract(maxHandlePosition, minHandlePosition);
+  
+  return (
+    <View style={[styles.container, { width }]}>
+      <View 
+        style={styles.trackContainer}
+        onLayout={(event) => {
+          const { width } = event.nativeEvent.layout;
+          setSliderWidth(width);
+        }}
+      >
+        <View style={styles.track} />
+        <Animated.View 
+          style={[
+            styles.activeTrack,
+            {
+              left: activeTrackPosition,
+              width: activeTrackWidth,
+            }
+          ]} 
+        />
+        <Animated.View 
+          style={[styles.handle, { left: minHandlePosition }]}
+          {...minPanResponder.panHandlers}
+        />
+        <Animated.View 
+          style={[styles.handle, { left: maxHandlePosition }]}
+          {...maxPanResponder.panHandlers}
+        />
+      </View>
+      
+      <View style={styles.labelContainer}>
+        <Text style={styles.labelText}>{minLabel}</Text>
+        <Text style={styles.labelText}>{maxLabel}</Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    height: 33,
+    flexDirection: 'column',
+    gap: 12,
+  },
+  trackContainer: {
+    width: '100%',
+    height: 4,
+    position: 'relative',
+  },
+  track: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 2,
+    position: 'absolute',
+  },
+  activeTrack: {
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    position: 'absolute',
+    marginLeft: 2,
+  },
+  handle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    position: 'absolute',
+    top: -4,
+    marginLeft: -4,
+    zIndex: 2,
+  },
+  labelContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    height: 17,
+  },
+  labelText: {
+    fontFamily: 'Poppins',
+    fontWeight: '500',
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#DEDEDE',
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+});
+```
+
+#### Usage Example
+
+```jsx
+import { RangeSlider } from './components/RangeSlider';
+
+const AgeRangeSelector = () => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.label}>AGE RANGE</Text>
+      <RangeSlider
+        minimumValue={18}
+        maximumValue={99}
+        initialMinimum={21}
+        initialMaximum={35}
+        minLabel="21 yrs"
+        maxLabel="35 yrs"
+        onValueChange={(min, max) => {
+          console.log(`Selected range: ${min}-${max} years`);
+        }}
+      />
+    </View>
+  );
+};
+```
+
+#### Accessibility Considerations
+
+- Ensure the slider supports screen readers by providing appropriate accessibility labels
+- Make handles large enough (12px minimum) for easy touch interaction
+- Include proper accessibility roles and states for range selection
+- Ensure sufficient color contrast for labels and active/inactive tracks
+
+#### Design Do's and Don'ts
+
+**Do's:**
+- Use the exact 4px height for the track
+- Maintain the 12px gap between track and labels
+- Keep helper text at 12px with Poppins font
+- Use 12×12px circular handles centered on the track
+
+**Don'ts:**
+- Don't use custom colors for the track or handles
+- Don't change the track's border radius (should be 2px)
+- Don't make handles rectangular or any other shape
+- Don't change label opacity from the specified 60%
+
+### Common Issues and Solutions
+
+1. **Issue**: Cursor generates buttons with square corners
+   **Solution**: "Remember all buttons in WindSurf must be fully rounded (borderRadius: 9999)"
+
+2. **Issue**: Wrong colors used in generated code
+   **Solution**: "Only use WindSurf colors: Accent (#FF3B30), White (#FFFFFF), Night (#121212)"
+
+3. **Issue**: Missing backdrop blur on cards or inputs
+   **Solution**: "Make sure to add backdrop-filter: blur(16px) to all cards and inputs using BlurView"
+
+4. **Issue**: Incorrect typography for text
+   **Solution**: "Text ≥20px must use Abril Fatface font with 400 weight and 104% line height. Text ≤18px must use Poppins font."
+
+5. **Issue**: Snap scrolling not implemented for lists
+   **Solution**: "All repeating groups must implement snap scrolling with snapToInterval and 8px gaps"
+
+6. **Issue**: Using incorrect border radius on cards
+   **Solution**: "Cards must have exactly 12px border radius - never more, never less"
+
+7. **Issue**: Missing proper opacity levels for states
+   **Solution**: "Maintain exact opacity levels: Active 100%, Inactive 48%, Hover 64%"
+
+8. **Issue**: Using non-WindSurf UI components
+   **Solution**: "Replace all standard UI components with WindSurf-specific variants"
+
+9. **Issue**: Insufficient contrast in text elements
+   **Solution**: "Ensure text has proper contrast by using the correct opacity levels"
+
+10. **Issue**: Improper spacing between elements
+    **Solution**: "Always use the WindSurf spacing system (4, 8, 12, 16, 20, 40, 56px)"
+
+11. **Issue**: Adding custom shadows instead of using backdrop blur
+    **Solution**: "Replace custom shadows with proper backdrop blur for depth"
+
+12. **Issue**: Using inline styles with arbitrary values
+    **Solution**: "All styling must use the WindSurf design system variables and tokens"

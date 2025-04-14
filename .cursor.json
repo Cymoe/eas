@@ -1,0 +1,86 @@
+{
+    "systemSettings": {
+      "designSystem": {
+        "enforceMode": "strict",
+        "version": "1.0.0",
+        "priority": "critical",
+        "override": true
+      },
+      "colorPalette": {
+        "enforceRestricted": true,
+        "allowedColors": [
+          "#FF4B4B",
+          "#FFFFFF",
+          "#121212",
+          "#F41857",
+          "#6BFF90",
+          "#FFA726"
+        ],
+        "opacityLevels": {
+          "active": 1,
+          "inactive": 0.48,
+          "hovered": 0.64
+        }
+      },
+      "typography": {
+        "largeTextThreshold": 20,
+        "largeTextFont": {
+          "family": "Abril Fatface",
+          "style": "normal",
+          "weight": 400,
+          "lineHeight": 1.04
+        },
+        "brandNameStyle": {
+          "weight": 500,
+          "opacity": 1
+        }
+      },
+      "components": {
+        "buttons": {
+          "borderRadius": 9999,
+          "enforceRounded": true
+        },
+        "tabs": {
+          "borderRadius": 9999,
+          "maxHeight": 28,
+          "padding": {
+            "left": 10,
+            "right": 10
+          }
+        },
+        "cards": {
+          "maxBorderRadius": 12,
+          "enforceMaxRadius": true,
+          "backdropBlur": 16
+        },
+        "inputs": {
+          "height": 40,
+          "borderRadius": 12,
+          "backdropBlur": 16
+        },
+        "lists": {
+          "snapScroll": true,
+          "gap": 8
+        }
+      },
+      "linting": {
+        "checkColors": true,
+        "checkTypography": true,
+        "checkComponents": true,
+        "reportViolations": true,
+        "autoCorrect": true,
+        "blockNonCompliantCode": true
+      }
+    },
+    "enhancedPrompts": {
+      "enforceDesignSystem": true,
+      "appendComplianceCheck": true,
+      "requireValidation": true
+    },
+    "codeGeneration": {
+      "enforceDesignSystem": true,
+      "priorityLevel": "maximum",
+      "autoCorrectViolations": true,
+      "rejectNonCompliantOutput": true
+    }
+  }
