@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,90 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
+
+// Define availability type
+type AvailabilityData = {
+  weekdays: boolean;
+  weekends: boolean;
+};
+
+// Define looking for options type
+type LookingForData = {
+  jamSessions: boolean;
+  studioTime: boolean;
+  concerts: boolean;
+  bandMembers: boolean;
+};
+
+// Define languages type
+type LanguagesData = {
+  [key: string]: boolean;
+};
 
 export default function BandProfileScreen() {
   // Get parameters passed to this screen
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
+
+  // State for availability
+  const [availability, setAvailability] = useState<AvailabilityData>({
+    weekdays: true,
+    weekends: true
+  });
+
+  // State for looking for options
+  const [lookingFor, setLookingFor] = useState<LookingForData>({
+    jamSessions: true,
+    studioTime: true,
+    concerts: true,
+    bandMembers: true
+  });
+  
+  // State for languages
+  const [languages, setLanguages] = useState<LanguagesData>({
+    English: true
+  });
+
+  // Load data when the screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadData = async () => {
+        try {
+          // Load availability data
+          const savedAvailability = await AsyncStorage.getItem('availability');
+          if (savedAvailability) {
+            const parsedAvailability = JSON.parse(savedAvailability) as AvailabilityData;
+            setAvailability(parsedAvailability);
+          }
+          
+          // Load looking for data
+          const savedLookingFor = await AsyncStorage.getItem('lookingFor');
+          if (savedLookingFor) {
+            const parsedLookingFor = JSON.parse(savedLookingFor) as LookingForData;
+            setLookingFor(parsedLookingFor);
+          }
+          
+          // Load languages data
+          const savedLanguages = await AsyncStorage.getItem('languages');
+          if (savedLanguages) {
+            const parsedLanguages = JSON.parse(savedLanguages) as LanguagesData;
+            setLanguages(parsedLanguages);
+          }
+        } catch (error) {
+          console.log('Error loading data:', error);
+        }
+      };
+      
+      loadData();
+      
+      return () => {
+        // Cleanup if needed
+      };
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -145,25 +223,28 @@ export default function BandProfileScreen() {
             <Text style={styles.sectionTitle}>Languages</Text>
             <TouchableOpacity 
               style={styles.showAllButton}
-              onPress={() => router.push('/languages')}
+              onPress={() => {
+                // Navigate to languages screen with returnTo parameter
+                router.push({
+                  pathname: '/languages',
+                  params: { returnTo: 'band-profile' }
+                });
+              }}
             >
               <Text style={styles.sectionHeaderRight}>Edit</Text>
               <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
             </TouchableOpacity>
           </View>
           <View style={styles.tagsContainer}>
-            <View style={styles.languageTag}>
-              <Ionicons name="language" size={16} color="#FFFFFF" />
-              <Text style={styles.tagText}>English</Text>
-            </View>
-            <View style={styles.languageTag}>
-              <Ionicons name="language" size={16} color="#FFFFFF" />
-              <Text style={styles.tagText}>French</Text>
-            </View>
-            <View style={styles.languageTag}>
-              <Ionicons name="language" size={16} color="#FFFFFF" />
-              <Text style={styles.tagText}>German</Text>
-            </View>
+            {Object.entries(languages)
+              .filter(([_, isSelected]) => isSelected)
+              .map(([language]) => (
+                <View key={language} style={styles.languageTag}>
+                  <Ionicons name="language" size={16} color="#FFFFFF" />
+                  <Text style={styles.tagText}>{language}</Text>
+                </View>
+              ))
+            }
           </View>
         </View>
         
@@ -197,59 +278,14 @@ export default function BandProfileScreen() {
           </View>
         </View>
         
-        <View style={styles.instrumentSection}>
+        <View style={styles.divider} />
+        
+        {/* Guitar Section */}
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Guitar</Text>
           <View style={styles.tagsContainer}>
             <View style={styles.tag}>
               <Text style={styles.tagText}>Intermediate</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.instrumentSection}>
-          <Text style={styles.sectionTitle}>Piano</Text>
-          <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Legend</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.instrumentSection}>
-          <Text style={styles.sectionTitle}>Voice</Text>
-          <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Advanced</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.divider} />
-        
-        {/* Looking For Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Looking for</Text>
-            <TouchableOpacity 
-              style={styles.showAllButton}
-              onPress={() => router.push('/looking-for')}
-            >
-              <Text style={styles.sectionHeaderRight}>Edit</Text>
-              <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Jam Sessions</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Studio time</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Gigs</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Band members</Text>
             </View>
           </View>
         </View>
@@ -262,19 +298,78 @@ export default function BandProfileScreen() {
             <Text style={styles.sectionTitle}>Availability</Text>
             <TouchableOpacity 
               style={styles.showAllButton}
-              onPress={() => router.push('/availability')}
+              onPress={() => router.push({
+                pathname: '/availability',
+                params: { returnTo: 'band-profile' }
+              })}
+            >
+              <Text style={styles.sectionHeaderRight}>Edit</Text>
+              <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.availabilityContainer}>
+            <View style={styles.availabilityItem}>
+              <Text style={styles.availabilityLabel}>Weekdays</Text>
+              <View style={styles.availabilityStatus}>
+                <View style={[styles.statusIndicator, availability.weekdays ? styles.statusActive : styles.statusInactive]} />
+                <Text style={styles.availabilityStatusText}>
+                  {availability.weekdays ? 'Available' : 'Unavailable'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.availabilityItem}>
+              <Text style={styles.availabilityLabel}>Weekends</Text>
+              <View style={styles.availabilityStatus}>
+                <View style={[styles.statusIndicator, availability.weekends ? styles.statusActive : styles.statusInactive]} />
+                <Text style={styles.availabilityStatusText}>
+                  {availability.weekends ? 'Available' : 'Unavailable'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.divider} />
+        
+        {/* Looking For Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Looking for</Text>
+            <TouchableOpacity 
+              style={styles.showAllButton}
+              onPress={() => {
+                // Navigate to looking-for screen with returnTo parameter
+                router.push({
+                  pathname: '/looking-for',
+                  params: { returnTo: 'band-profile' }
+                });
+              }}
             >
               <Text style={styles.sectionHeaderRight}>Edit</Text>
               <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
             </TouchableOpacity>
           </View>
           <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Weekdays</Text>
-            </View>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Weekends</Text>
-            </View>
+            {lookingFor.jamSessions && (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>Jam Sessions</Text>
+              </View>
+            )}
+            {lookingFor.studioTime && (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>Studio time</Text>
+              </View>
+            )}
+            {lookingFor.concerts && (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>Concerts</Text>
+              </View>
+            )}
+            {lookingFor.bandMembers && (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>Band members</Text>
+              </View>
+            )}
           </View>
         </View>
         
@@ -989,5 +1084,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     color: '#FFFFFF',
+  },
+  availabilityContainer: {
+    marginTop: 8,
+  },
+  availabilityItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  availabilityLabel: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  availabilityStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusActive: {
+    backgroundColor: '#6BFF90',
+  },
+  statusInactive: {
+    backgroundColor: '#F41857',
+  },
+  availabilityStatusText: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.64)',
   },
 });
