@@ -286,7 +286,19 @@ export default function ArtistProfileScreen() {
         
         {/* Fan Of Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fan of</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Fan of</Text>
+            <TouchableOpacity 
+              style={styles.showAllButton}
+              onPress={() => router.push({
+                pathname: '/fans',
+                params: { bandId: id }
+              })}
+            >
+              <Text style={styles.sectionHeaderRight}>Show all</Text>
+              <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.fanOfContainer}>
             <View style={styles.fanItem}>
               <Image 
@@ -403,7 +415,10 @@ export default function ArtistProfileScreen() {
             </View>
             <TouchableOpacity 
               style={styles.showAllButton}
-              onPress={() => router.push(`/songs-we-know?artistId=${1}`)}
+              onPress={() => router.push({
+                pathname: '/songs-we-know',
+                params: { bandId: id }
+              })}
             >
               <Text style={styles.sectionHeaderRight}>Show all</Text>
               <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />

@@ -337,8 +337,11 @@ export default function BandProfileScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Fan of</Text>
             <TouchableOpacity 
-              onPress={() => router.push(`/fans?bandId=${id}`)}
               style={styles.showAllButton}
+              onPress={() => router.push({
+                pathname: '/fans',
+                params: { bandId: id }
+              })}
             >
               <Text style={styles.sectionHeaderRight}>Show all</Text>
               <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
@@ -379,7 +382,10 @@ export default function BandProfileScreen() {
             <Text style={styles.sectionTitle}>Songs We Know</Text>
             <TouchableOpacity 
               style={styles.showAllButton}
-              onPress={() => router.push(`/songs-we-know?bandId=${id}`)}
+              onPress={() => router.push({
+                pathname: '/songs-we-know',
+                params: { bandId: id }
+              })}
             >
               <Text style={styles.sectionHeaderRight}>Show all</Text>
               <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
