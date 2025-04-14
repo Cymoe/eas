@@ -10,7 +10,7 @@ export default function EmailVerificationScreen() {
   const [isSent, setIsSent] = useState(true);
 
   const handleContinue = () => {
-    router.push('/onboarding/verification-code');
+    router.push('/onboarding/create-password');
   };
 
   const handleBack = () => {

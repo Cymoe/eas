@@ -1,58 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-// Import our mock AsyncStorage instead of the real one
-import AsyncStorage from '../../utils/mockAsyncStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function ConfirmPasswordScreen() {
-  const [password, setPassword] = useState('');
-  const [originalPassword, setOriginalPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isValid, setIsValid] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Retrieve the original password when the component mounts
-  useEffect(() => {
-    const getOriginalPassword = async () => {
-      try {
-        const storedPassword = await AsyncStorage.getItem('tempPassword');
-        if (storedPassword) {
-          setOriginalPassword(storedPassword);
-        }
-      } catch (error) {
-        console.error('Error retrieving password:', error);
-      }
-    };
-
-    getOriginalPassword();
-  }, []);
-
-  // Validate the password as it changes
-  useEffect(() => {
-    // For development, allow any password with at least 1 character
-    setIsValid(password.length > 0);
-    
-    // Still show error message if passwords don't match, but don't block progression
-    if (password.length > 0 && password !== originalPassword) {
-      setErrorMessage('Passwords do not match');
-    } else {
-      setErrorMessage('');
-    }
-  }, [password, originalPassword]);
+export default function UserTypeScreen() {
+  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   const handleContinue = async () => {
-    if (isValid) {
+    if (selectedType) {
       try {
-        // Save the confirmed password
-        await AsyncStorage.setItem('userPassword', password);
+        // Store the user type selection
+        await AsyncStorage.setItem('userType', selectedType);
         
-        // Navigate to the next screen
-        router.navigate('/onboarding/user-type' as any);
+        // Navigate based on user type
+        if (selectedType === 'solo') {
+          // Solo artist flow
+          router.push('/onboarding/full-name' as any);
+        } else if (selectedType === 'band') {
+          // Band flow
+          router.push('/onboarding/band-name' as any);
+        }
       } catch (error) {
-        console.error('Error saving password:', error);
+        console.error('Error saving user type:', error);
       }
     }
   };
@@ -71,9 +43,9 @@ export default function ConfirmPasswordScreen() {
           <View style={styles.headerTextContainer}>
             <View style={styles.headerTitleRow}>
               <Text style={styles.headerTitle}>Registration</Text>
-              <Text style={styles.stepIndicator}>3/8</Text>
+              <Text style={styles.stepIndicator}>4/8</Text>
             </View>
-            <Text style={styles.headerSubtitle}>Password</Text>
+            <Text style={styles.headerSubtitle}>User Type</Text>
           </View>
           <View style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
@@ -88,29 +60,33 @@ export default function ConfirmPasswordScreen() {
       
       {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Confirm password</Text>
+        <Text style={styles.title}>I am a</Text>
         
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="********"
-            placeholderTextColor="rgba(255, 255, 255, 0.48)"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons 
-              name={showPassword ? "eye-off-outline" : "eye-outline"} 
-              size={24} 
-              color="rgba(255, 255, 255, 0.48)" 
-            />
+        <View style={styles.cardContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.card, 
+              styles.soloCard,
+              selectedType === 'solo' && styles.selectedCard
+            ]}
+            onPress={() => setSelectedType('solo')}
+          >
+            <Text style={styles.cardTitle}>Solo Artist</Text>
+            <View style={[styles.cardImage, styles.soloCardImage]} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.card, 
+              styles.bandCard,
+              selectedType === 'band' && styles.selectedCard
+            ]}
+            onPress={() => setSelectedType('band')}
+          >
+            <Text style={styles.cardTitle}>Band</Text>
+            <View style={[styles.cardImage, styles.bandCardImage]} />
           </TouchableOpacity>
         </View>
-        
-        {errorMessage ? (
-          <Text style={styles.errorMessage}>{errorMessage}</Text>
-        ) : null}
       </View>
       
       {/* Footer */}
@@ -124,19 +100,12 @@ export default function ConfirmPasswordScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.continueButton, !isValid && styles.continueButtonDisabled]}
+            style={[styles.continueButton, !selectedType && styles.continueButtonDisabled]}
             onPress={handleContinue}
-            disabled={!isValid}
+            disabled={!selectedType}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
-        </View>
-        
-        <View style={styles.termsRow}>
-          <Ionicons name="ellipse" size={12} color="rgba(255, 255, 255, 0.48)" />
-          <Text style={styles.termsText}>
-            By pressing "Continue" you agree with <Text style={styles.tosText}>BandMate TOS</Text>.
-          </Text>
         </View>
       </LinearGradient>
     </View>
@@ -210,7 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   progressIndicator: {
-    width: '37.5%', // 3/8 of the progress
+    width: '50%', // 4/8 of the progress
     height: 4,
     backgroundColor: '#FFFFFF',
     borderRadius: 1,
@@ -218,41 +187,67 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingTop: 20,
+    paddingTop: 24,
+    paddingBottom: 24,
   },
   title: {
     fontFamily: 'Abril Fatface',
     fontWeight: '400',
-    fontSize: 20,
-    lineHeight: 27,
+    fontSize: 32,
+    lineHeight: 38,
     color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: 24,
   },
-  inputContainer: {
+  cardContainer: {
+    gap: 8,
+  },
+  card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    padding: 16,
+    paddingBottom: 0,
+    height: 160,
+    borderRadius: 7.89,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 8,
   },
-  input: {
-    flex: 1,
-    height: 48,
-    color: 'rgba(255, 255, 255, 0.48)',
-    fontFamily: 'Poppins',
-    fontWeight: '400',
-    fontSize: 16,
-    letterSpacing: -0.03 * 16,
+  soloCard: {
+    backgroundColor: '#006450', // Green color for solo artist
   },
-  errorMessage: {
+  bandCard: {
+    backgroundColor: '#DC158C', // Pink color for band
+  },
+  selectedCard: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  cardTitle: {
     fontFamily: 'Poppins',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#FF4B4B',
-    marginTop: 4,
+    fontWeight: '500',
+    fontSize: 28,
+    lineHeight: 37,
+    color: '#FFFFFF',
+    zIndex: 1,
+  },
+  cardImage: {
+    position: 'absolute',
+    width: 144,
+    height: 144,
+    right: -80,
+    bottom: 24,
+    borderRadius: 7.89,
+    transform: [{ rotate: '25deg' }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 19.72,
+  },
+  soloCardImage: {
+    backgroundColor: 'rgba(0, 100, 80, 0.7)', // Darker shade of the solo card color
+  },
+  bandCardImage: {
+    backgroundColor: 'rgba(220, 21, 140, 0.7)', // Darker shade of the band card color
   },
   footer: {
     width: '100%',
@@ -293,24 +288,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#121212',
     textAlign: 'center',
-  },
-  termsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 12,
-  },
-  termsText: {
-    fontFamily: 'Poppins',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 18,
-    color: 'rgba(255, 255, 255, 0.48)',
-    textAlign: 'center',
-    letterSpacing: -0.03 * 12,
-    marginLeft: 4,
-  },
-  tosText: {
-    color: 'rgba(255, 255, 255, 0.48)',
   },
 });

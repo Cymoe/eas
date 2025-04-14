@@ -1,61 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-// Import our mock AsyncStorage instead of the real one
-import AsyncStorage from '../../utils/mockAsyncStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function CreatePasswordScreen() {
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+export default function FullNameScreen() {
+  const [fullName, setFullName] = useState('');
   const [isValid, setIsValid] = useState(false);
-  
-  // Password requirements
-  const [hasMinLength, setHasMinLength] = useState(false);
-  const [hasUppercase, setHasUppercase] = useState(false);
-  const [hasDigit, setHasDigit] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
-  // First useEffect to update individual requirements
+  // Retrieve the user type when the component mounts
   useEffect(() => {
-    setHasMinLength(password.length >= 8);
-    setHasUppercase(/[A-Z]/.test(password));
-    setHasDigit(/\d/.test(password));
-    
-    // For development, allow any password with at least 1 character
-    setIsValid(password.length > 0);
-  }, [password]);
+    const getUserType = async () => {
+      try {
+        const storedUserType = await AsyncStorage.getItem('userType');
+        if (storedUserType) {
+          setUserType(storedUserType);
+        }
+      } catch (error) {
+        console.error('Error retrieving user type:', error);
+      }
+    };
+
+    getUserType();
+  }, []);
+
+  // Validate the name as it changes
+  useEffect(() => {
+    // Simple validation: name must be at least 2 characters
+    setIsValid(fullName.trim().length >= 2);
+  }, [fullName]);
 
   const handleContinue = async () => {
-    try {
-      // Store the password in AsyncStorage
-      await AsyncStorage.setItem('tempPassword', password);
-      // Navigate to confirm password screen
-      router.push('/onboarding/confirm-password');
-    } catch (error) {
-      console.error('Error saving password:', error);
+    if (isValid) {
+      try {
+        // Store the full name
+        await AsyncStorage.setItem('fullName', fullName);
+        
+        // Navigate based on user type
+        if (userType === 'solo') {
+          router.push({
+            pathname: '/onboarding/date-of-birth',
+          });
+        } else {
+          router.push({
+            pathname: '/onboarding/age-range',
+          });
+        }
+      } catch (error) {
+        console.error('Error saving full name:', error);
+      }
     }
-  };
-
-  const generatePassword = () => {
-    const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let newPassword = "";
-    
-    // Ensure we have at least one uppercase and one digit
-    newPassword += "A"; // Add one uppercase
-    newPassword += "1"; // Add one digit
-    
-    // Fill the rest with random characters
-    for (let i = 0; i < length - 2; i++) {
-      newPassword += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    
-    // Shuffle the password
-    newPassword = newPassword.split('').sort(() => 0.5 - Math.random()).join('');
-    
-    setPassword(newPassword);
   };
 
   const goBack = () => {
@@ -72,9 +69,9 @@ export default function CreatePasswordScreen() {
           <View style={styles.headerTextContainer}>
             <View style={styles.headerTitleRow}>
               <Text style={styles.headerTitle}>Registration</Text>
-              <Text style={styles.stepIndicator}>2/8</Text>
+              <Text style={styles.stepIndicator}>5/8</Text>
             </View>
-            <Text style={styles.headerSubtitle}>Password</Text>
+            <Text style={styles.headerSubtitle}>Personal Details</Text>
           </View>
           <View style={styles.infoButton}>
             <Ionicons name="information-circle-outline" size={24} color="#FFFFFF" />
@@ -89,65 +86,26 @@ export default function CreatePasswordScreen() {
       
       {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Create a password</Text>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="********"
-            placeholderTextColor="rgba(255, 255, 255, 0.48)"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons 
-              name={showPassword ? "eye-off-outline" : "eye-outline"} 
-              size={24} 
-              color="rgba(255, 255, 255, 0.48)" 
-            />
-          </TouchableOpacity>
-        </View>
-        
-        <TouchableOpacity style={styles.generatePasswordRow} onPress={generatePassword}>
-          <Text style={styles.generatePasswordText}>Generate a password for me</Text>
-          <Ionicons name="arrow-forward-outline" size={12} color="#FFFFFF" />
-        </TouchableOpacity>
-        
-        <View style={styles.divider} />
-        
-        <View style={styles.requirementsContainer}>
-          <View style={styles.requirementRow}>
-            <View style={styles.checkCircle}>
-              <Ionicons 
-                name={hasMinLength ? "checkmark" : "ellipse"} 
-                size={12} 
-                color="rgba(255, 255, 255, 0.64)" 
-              />
-            </View>
-            <Text style={styles.requirementText}>Minimum 8 characters.</Text>
-          </View>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>What's your full name?</Text>
           
-          <View style={styles.requirementRow}>
-            <View style={styles.checkCircle}>
-              <Ionicons 
-                name={hasUppercase ? "checkmark" : "ellipse"} 
-                size={12} 
-                color="rgba(255, 255, 255, 0.64)" 
+          <View style={styles.inputWrapper}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="E.g. James John Jackson..."
+                placeholderTextColor="rgba(255, 255, 255, 0.48)"
               />
             </View>
-            <Text style={styles.requirementText}>Minimum 1 uppercase</Text>
-          </View>
-          
-          <View style={styles.requirementRow}>
-            <View style={styles.checkCircle}>
-              <Ionicons 
-                name={hasDigit ? "checkmark" : "ellipse"} 
-                size={12} 
-                color="rgba(255, 255, 255, 0.64)" 
-              />
+            
+            <View style={styles.warningContainer}>
+              <Ionicons name="ellipse" size={12} color="#828282" />
+              <Text style={styles.warningText}>
+                Inappropriate names are forbidden.
+              </Text>
             </View>
-            <Text style={styles.requirementText}>Minimum 1 digit</Text>
           </View>
         </View>
       </View>
@@ -249,7 +207,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   progressIndicator: {
-    width: '25%', // 2/8 of the progress
+    width: '62.5%', // 5/8 of the progress
     height: 4,
     backgroundColor: '#FFFFFF',
     borderRadius: 1,
@@ -257,7 +215,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingTop: 20,
+    paddingTop: 24,
+  },
+  formContainer: {
+    gap: 12,
   },
   title: {
     fontFamily: 'Abril Fatface',
@@ -265,61 +226,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 27,
     color: '#FFFFFF',
-    marginBottom: 12,
+  },
+  inputWrapper: {
+    gap: 8,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     height: 48,
-    paddingHorizontal: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
-    marginBottom: 12,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
   },
   input: {
-    flex: 1,
-    height: 48,
-    color: 'rgba(255, 255, 255, 0.48)',
+    color: '#FFFFFF',
     fontFamily: 'Poppins',
     fontWeight: '400',
     fontSize: 16,
+    lineHeight: 24,
     letterSpacing: -0.03 * 16,
+    width: '100%',
   },
-  generatePasswordRow: {
+  warningContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 12,
-    marginBottom: 12,
+    gap: 4,
   },
-  generatePasswordText: {
-    fontFamily: 'Poppins',
-    fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#FFFFFF',
-    letterSpacing: -0.03 * 12,
-    marginRight: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-    marginBottom: 12,
-  },
-  requirementsContainer: {
-    marginTop: 6,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 12,
-    marginBottom: 6,
-  },
-  checkCircle: {
-    width: 12,
-    height: 12,
-    marginRight: 4,
-  },
-  requirementText: {
+  warningText: {
     fontFamily: 'Poppins',
     fontWeight: '400',
     fontSize: 12,
