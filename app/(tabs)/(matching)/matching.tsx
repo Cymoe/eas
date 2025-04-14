@@ -242,15 +242,33 @@ export default function MatchingScreen() {
     }
   };
 
+  // Function to navigate to profile
+  const navigateToProfile = (profile: Profile) => {
+    if (!profile?.id || !profile?.name || !profile?.type) return;
+    
+    // Prevent navigation during swipe animations
+    if (swiping) return;
+    
+    // Provide haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    router.push({
+      pathname: profile.type === 'artist' ? '/artist-profile' : '/band-profile',
+      params: { 
+        id: profile.id,
+        name: profile.name,
+        type: profile.type
+      }
+    });
+  };
+
   // Pan gesture handler
   const panGesture = Gesture.Pan()
     .enabled(true)
     .minDistance(5)
-    .activateAfterLongPress(0) // Activate immediately without delay
     .onTouchesDown(() => {
       'worklet';
-      runOnJS(Haptics.selectionAsync)(); // Add subtle haptic feedback on touch
-      return true;
+      runOnJS(Haptics.selectionAsync)();
     })
     .onStart(() => {
       runOnJS(setSwiping)(true);
@@ -407,6 +425,24 @@ export default function MatchingScreen() {
       runOnJS(setSwiping)(false);
     });
 
+  // Tap gesture handler
+  const tapGesture = Gesture.Tap()
+    .enabled(true)
+    .numberOfTaps(1)
+    .maxDistance(10)
+    .onStart(() => {
+      'worklet';
+      const profile = profiles[currentIndex];
+      if (!profile) return;
+      runOnJS(navigateToProfile)(profile);
+    });
+
+  // Allow both gestures to work independently
+  const combinedGesture = Gesture.Simultaneous(
+    tapGesture,
+    panGesture
+  );
+
   // Card animated style
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -471,21 +507,16 @@ export default function MatchingScreen() {
       );
     }
 
-    // Render all cards at once with proper z-index
     return (
       <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
         {profiles.map((profile, index) => {
-          // Only render current and next cards
           if (index < currentIndex || index > currentIndex + 1) return null;
           
           const isCurrentCard = index === currentIndex;
-          
-          // Apply different styles based on position
           const cardStyle = isCurrentCard ? 
             [styles.card, cardAnimatedStyle] : 
             [styles.card, nextCardAnimatedStyle];
           
-          // Render the card
           return (
             <View 
               key={profile.id} 
@@ -495,7 +526,7 @@ export default function MatchingScreen() {
               ]}
             >
               {isCurrentCard ? (
-                <GestureDetector gesture={panGesture}>
+                <GestureDetector gesture={combinedGesture}>
                   <Animated.View style={cardStyle}>
                     <Image
                       source={profile.image}
@@ -572,7 +603,7 @@ export default function MatchingScreen() {
             {/* Bio */}
             <View style={styles.bioContainer}>
               <Text style={styles.bio}>
-                Lead guitarist looking for a band. Into classic rock and blues.
+                {profile.bio || 'Lead guitarist looking for a band. Into classic rock and blues.'}
               </Text>
               <Ionicons name="chevron-forward" size={24} color="#FFFFFF" style={styles.bioArrow} />
             </View>
