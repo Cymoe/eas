@@ -238,9 +238,7 @@ export default function ChatsScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer}></View>
         <Text style={styles.headerTitle}>Chats</Text>
         <TouchableOpacity style={styles.optionsButton} onPress={() => router.push('/chat-settings')}>
           <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -370,12 +368,9 @@ const styles = StyleSheet.create({
     paddingTop: 55,
     paddingBottom: 12,
   },
-  backButton: {
+  headerSpacer: {
     width: 40,
     height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
   },
   headerTitle: {
     fontSize: 24,

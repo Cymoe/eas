@@ -678,12 +678,12 @@ export default function MatchingScreen() {
             <View style={styles.userInfo}>
               <TouchableOpacity onPress={() => router.navigate('/profile' as any)}>
                 <Image 
-                  source={currentIndex < profiles.length ? profiles[currentIndex].image : require('../../../assets/images/avril.png')}
+                  source={require('../../../assets/images/avatar.png')}
                   style={styles.userAvatar}
                 />
               </TouchableOpacity>
               <View style={styles.userTexts}>
-                <Text style={styles.greeting}>Hi {currentIndex < profiles.length ? profiles[currentIndex].name : 'Viktor'} 👋</Text>
+                <Text style={styles.greeting}>Hi Viktor 👋</Text>
                 <Text style={styles.subgreeting}>Hope you had a great day!</Text>
               </View>
             </View>
