@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, Pressable, Platform, ActivityIndicator, TouchableWithoutFeedback } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -61,6 +61,7 @@ const sharedStyles = StyleSheet.create({
 });
 
 export default function MatchingScreen() {
+  const { action } = useLocalSearchParams<{ action?: 'like' | 'dislike' | 'superlike' }>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(1);
   const [swiping, setSwiping] = useState(false);
@@ -471,6 +472,22 @@ export default function MatchingScreen() {
       nextCardOpacity.value = 0.85;
     }, 500);
   }, []);
+
+  useEffect(() => {
+    if (action) {
+      switch (action) {
+        case 'like':
+          forceSwipe('right');
+          break;
+        case 'dislike':
+          forceSwipe('left');
+          break;
+        case 'superlike':
+          forceSwipe('up');
+          break;
+      }
+    }
+  }, [action]);
 
   // Simplified card rendering
   const renderCards = () => {

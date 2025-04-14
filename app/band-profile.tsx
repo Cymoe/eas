@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -38,6 +39,15 @@ export default function BandProfileScreen() {
               start={{ x: 0.5, y: 1 }}
               end={{ x: 0.5, y: 0.64 }}
             />
+            
+            <View style={styles.backButtonContainer}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
             
             <View style={styles.bandInfoContainer}>
               <View style={styles.bandInfo}>
@@ -485,6 +495,21 @@ const styles = StyleSheet.create({
     height: '100%',
     top: 0,
     left: 0,
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 48,
+    left: 16,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backdropFilter: 'blur(16px)',
   },
   bandInfoContainer: {
     position: 'absolute',

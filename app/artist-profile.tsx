@@ -13,6 +13,17 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+  Extrapolate,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -63,19 +74,46 @@ export default function ArtistProfileScreen() {
             
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={[styles.actionButton, styles.dislikeButton]}>
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.dislikeButton]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push({
+                    pathname: '/(tabs)/(matching)/matching',
+                    params: { action: 'dislike' }
+                  });
+                }}
+              >
                 <View style={styles.actionButtonIcon}>
                   <Ionicons name="close" size={24} color="#121212" />
                 </View>
               </TouchableOpacity>
               
-              <TouchableOpacity style={[styles.actionButton, styles.messageButton]}>
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.messageButton]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                  router.push({
+                    pathname: '/(tabs)/(matching)/matching',
+                    params: { action: 'superlike' }
+                  });
+                }}
+              >
                 <View style={styles.actionButtonIcon}>
-                  <Ionicons name="chatbubble" size={24} color="#121212" />
+                  <Ionicons name="arrow-up" size={24} color="#121212" />
                 </View>
               </TouchableOpacity>
               
-              <TouchableOpacity style={[styles.actionButton, styles.likeButton]}>
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.likeButton]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push({
+                    pathname: '/(tabs)/(matching)/matching',
+                    params: { action: 'like' }
+                  });
+                }}
+              >
                 <View style={styles.actionButtonIcon}>
                   <Ionicons name="heart" size={24} color="#121212" />
                 </View>
