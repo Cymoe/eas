@@ -67,41 +67,41 @@ export default function MatchingScreen() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [profiles] = useState<Profile[]>([
     {
-      id: 'square-123',
-      name: 'Square Waves',
-      type: 'band',
+      id: 'avril-123',
+      name: 'Avril',
+      type: 'artist',
       location: 'Los Angeles, CA',
       distance: 33,
       matchPercent: 64,
-      genres: ['Blues', 'Rock', 'Soul'],
+      genres: ['Pop', 'Rock', 'Alternative'],
       commonMatches: 4,
-      bio: 'Lead guitarist looking for a band. Into classic rock and blues.',
+      bio: 'Lead vocalist and guitarist. Into pop punk and rock.',
       image: require('../../../assets/images/avril.png'),
       monthlyViews: 528
     },
     {
-      id: 'sarah-456',
-      name: 'Sarah Connor',
+      id: 'drummer-456',
+      name: 'Travis Barker',
       type: 'artist',
       location: 'San Francisco, CA',
       distance: 15,
       matchPercent: 78,
-      genres: ['Jazz', 'Soul', 'R&B'],
+      genres: ['Punk Rock', 'Hip Hop', 'Rock'],
       commonMatches: 2,
-      bio: 'Vocalist seeking band members. Love jazz and soul music.',
+      bio: 'Drummer. Collaborating with artists across genres from punk rock to hip hop.',
       image: require('../../../assets/images/drummer.png'),
       monthlyViews: 412
     },
     {
-      id: 'groove-789',
-      name: 'Groove Collective',
+      id: 'artic-789',
+      name: 'Arctic Monkeys',
       type: 'band',
       location: 'New York, NY',
       distance: 42,
       matchPercent: 91,
-      genres: ['Funk', 'Jazz', 'Electronic'],
+      genres: ['Indie Rock', 'Alternative', 'Rock'],
       commonMatches: 6,
-      bio: 'Electronic funk band looking for keyboardist.',
+      bio: 'Looking for a lead guitarist. Must love indie rock.',
       image: require('../../../assets/images/artic.png'),
       monthlyViews: 743
     }
@@ -275,11 +275,8 @@ export default function MatchingScreen() {
     })
     .onUpdate((event) => {
       'worklet';
-      // Make the card follow finger with slight resistance for more natural feel
       translateX.value = event.translationX * 0.95;
       translateY.value = event.translationY * 0.95;
-      
-      // Enhanced rotation that feels more natural
       rotate.value = interpolate(
         event.translationX,
         [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
@@ -287,9 +284,7 @@ export default function MatchingScreen() {
         Extrapolate.CLAMP
       );
 
-      // More responsive overlay indicators with smoother transitions
       if (Math.abs(event.translationY) > Math.abs(event.translationX) && event.translationY < 0) {
-        // Super Like - Blue
         superLikeOpacity.value = interpolate(
           -event.translationY,
           [0, SCREEN_HEIGHT * 0.1, SCREEN_HEIGHT * 0.2],
@@ -299,7 +294,6 @@ export default function MatchingScreen() {
         likeOpacity.value = withTiming(0, {duration: 100});
         nopeOpacity.value = withTiming(0, {duration: 100});
       } else if (event.translationX > 0) {
-        // Like - Green (using WindSurf greenFlag color)
         likeOpacity.value = interpolate(
           event.translationX,
           [0, SCREEN_WIDTH * 0.1, SCREEN_WIDTH * 0.2],
@@ -309,7 +303,6 @@ export default function MatchingScreen() {
         nopeOpacity.value = withTiming(0, {duration: 100});
         superLikeOpacity.value = withTiming(0, {duration: 100});
       } else if (event.translationX < 0) {
-        // Nope - Red (using WindSurf redFlag color)
         nopeOpacity.value = interpolate(
           -event.translationX,
           [0, SCREEN_WIDTH * 0.1, SCREEN_WIDTH * 0.2],
@@ -320,7 +313,6 @@ export default function MatchingScreen() {
         superLikeOpacity.value = withTiming(0, {duration: 100});
       }
       
-      // Scale the next card as the current card moves away
       nextCardScale.value = interpolate(
         Math.abs(event.translationX),
         [0, SCREEN_WIDTH * 0.4],
@@ -565,7 +557,7 @@ export default function MatchingScreen() {
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={18} color="#0D72EA" />
           </View>
-          <Text style={styles.verifiedText}>VERIFIED ARTIST</Text>
+          <Text style={styles.verifiedText}>VERIFIED {profile.type.toUpperCase()}</Text>
         </View>
         
         {/* Profile info at bottom of card */}
@@ -576,24 +568,24 @@ export default function MatchingScreen() {
           <View style={styles.profileInfoContainer}>
             {/* Name and age */}
             <View style={styles.nameContainer}>
-              <Text style={styles.profileName}>Amy, <Text style={styles.profileAge}>24</Text></Text>
+              <Text style={styles.profileName}>{profile.name}</Text>
             </View>
             
             {/* Location with icon */}
             <View style={styles.locationContainer}>
               <Ionicons name="location-outline" size={16} color="#EBEAEC" />
-              <Text style={styles.locationText}>Los Angeles, CA</Text>
-              <Text style={styles.distanceText}>33 km</Text>
+              <Text style={styles.locationText}>{profile.location}</Text>
+              <Text style={styles.distanceText}>{profile.distance} km</Text>
             </View>
             
             {/* Monthly views */}
             <Text style={styles.monthlyViewsText}>
-              528 monthly profile views
+              {profile.monthlyViews?.toLocaleString()} monthly profile views
             </Text>
             
             {/* Genres */}
             <View style={styles.genreContainer}>
-              {['Blues', 'Rock', 'Soul'].map((genre, idx) => (
+              {profile.genres.map((genre, idx) => (
                 <View key={idx} style={styles.genreTag}>
                   <Text style={styles.genreText}>{genre}</Text>
                 </View>
@@ -603,7 +595,7 @@ export default function MatchingScreen() {
             {/* Bio */}
             <View style={styles.bioContainer}>
               <Text style={styles.bio}>
-                {profile.bio || 'Lead guitarist looking for a band. Into classic rock and blues.'}
+                {profile.bio}
               </Text>
               <Ionicons name="chevron-forward" size={24} color="#FFFFFF" style={styles.bioArrow} />
             </View>
@@ -669,12 +661,12 @@ export default function MatchingScreen() {
             <View style={styles.userInfo}>
               <TouchableOpacity onPress={() => router.navigate('/profile' as any)}>
                 <Image 
-                  source={{ uri: 'https://picsum.photos/32/32' }}
+                  source={currentIndex < profiles.length ? profiles[currentIndex].image : require('../../../assets/images/avril.png')}
                   style={styles.userAvatar}
                 />
               </TouchableOpacity>
               <View style={styles.userTexts}>
-                <Text style={styles.greeting}>Hi Viktor 👋</Text>
+                <Text style={styles.greeting}>Hi {currentIndex < profiles.length ? profiles[currentIndex].name : 'Viktor'} 👋</Text>
                 <Text style={styles.subgreeting}>Hope you had a great day!</Text>
               </View>
             </View>
