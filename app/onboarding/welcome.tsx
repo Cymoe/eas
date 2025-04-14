@@ -31,8 +31,8 @@ export default function WelcomeScreen() {
   const goToMatchingScreen = () => {
     try {
       console.log("Attempting to navigate to matching screen...");
-      // Navigate to the matching screen
-      router.replace('/(tabs)/matching');
+      // Navigate to the matching tab
+      router.replace('/matching');
       
       // Show an alert to confirm the navigation was triggered
       Alert.alert(
