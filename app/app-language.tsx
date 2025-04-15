@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useTranslation } from '../hooks/useTranslation';
+import { Colors } from '../constants/Colors';
+import { spacing } from '../constants/Spacing';
 
 interface Language {
   code: string;
@@ -18,80 +22,111 @@ interface Language {
   flag: string;
 }
 
-export default function AppLanguageScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
-  
-  const languages: Language[] = [
-    { code: 'sq', name: 'Albanian', nativeName: 'Shqiptar', flag: '🇦🇱' },
-    { code: 'zh-CN', name: 'Mandarin Chinese', nativeName: '中文 (Zhōngwén)', flag: '🇨🇳' },
-    { code: 'en-US', name: 'English (US)', nativeName: 'English (US)', flag: '🇺🇸' },
-    { code: 'hi', name: 'Hindi', nativeName: 'हिंदी (Hindi)', flag: '🇮🇳' },
-    { code: 'bn', name: 'Bengali', nativeName: 'বাংলা (Bangla)', flag: '🇧🇩' },
-    { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
-    { code: 'ru', name: 'Russian', nativeName: 'Русский (Russkiy)', flag: '🇷🇺' },
-    { code: 'ja', name: 'Japanese', nativeName: '日本語 (Nihongo)', flag: '🇯🇵' },
-    { code: 'ar', name: 'Standard Arabic', nativeName: 'اللغة العربية (Al-ʿArabīyah)', flag: '🇸🇦' },
-    { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-    { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-    { code: 'ko', name: 'Korean', nativeName: '한국어 (Hangug-eo)', flag: '🇰🇷' },
-    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
-    { code: 'te', name: 'Telugu', nativeName: 'తెలుగు (Telugu)', flag: '🇮🇳' },
-    { code: 'mr', name: 'Marathi', nativeName: 'मराठी (Marāṭhī)', flag: '🇮🇳' },
-    { code: 'ta', name: 'Tamil', nativeName: 'தமிழ் (Tamil)', flag: '🇮🇳' },
-    { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
-    { code: 'sr', name: 'Serbian', nativeName: 'Српски (Srpski)', flag: '🇷🇸' },
-    { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
-    { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷' },
-  ];
+const LANGUAGES: Language[] = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
+];
 
-  const handleSelectLanguage = (code: string) => {
-    setSelectedLanguage(code);
-    // In a real app, you would save this preference to AsyncStorage or a backend
-    // Then navigate back
+export default function AppLanguageScreen() {
+  const { language, setLanguage, t } = useTranslation();
+
+  const handleSelectLanguage = async (code: string) => {
+    await Haptics.selectionAsync();
+    setLanguage(code);
     setTimeout(() => router.back(), 300);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: Colors.black }}>
       <StatusBar style="light" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={{ 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingTop: spacing.xl + (Platform.OS === 'ios' ? 44 : 0),
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.lg,
+      }}>
         <TouchableOpacity 
-          style={styles.backButton} 
           onPress={() => router.back()}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: Colors.withOpacity(Colors.white, 0.08),
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={Colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>App Language</Text>
-        <View style={styles.placeholder} />
+        <Text style={{ 
+          marginLeft: spacing.md,
+          fontSize: 24,
+          fontWeight: '500',
+          color: Colors.white,
+        }}>
+          {t('profile.language')}
+        </Text>
       </View>
-      
-      <Text style={styles.subtitle}>
-        <Ionicons name="information-circle-outline" size={14} color="rgba(255, 255, 255, 0.48)" /> Select your preferred app language.
+
+      {/* Subtitle */}
+      <Text style={{ 
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.lg,
+        fontSize: 16,
+        color: Colors.withOpacity(Colors.white, 0.48),
+      }}>
+        {t('profile.selectLanguage')}
       </Text>
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {languages.map((language) => (
+
+      {/* Language List */}
+      <ScrollView style={{ flex: 1 }}>
+        {LANGUAGES.map((lang) => (
           <TouchableOpacity
-            key={language.code}
-            style={styles.languageItem}
-            onPress={() => handleSelectLanguage(language.code)}
+            key={lang.code}
+            onPress={() => handleSelectLanguage(lang.code)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: spacing.md,
+              paddingHorizontal: spacing.lg,
+              backgroundColor: Colors.black,
+            }}
           >
-            <View style={styles.languageInfo}>
-              <Text style={styles.flagEmoji}>{language.flag}</Text>
-              <View style={styles.languageTextContainer}>
-                <Text style={styles.languageName}>{language.name}</Text>
-                <Text style={styles.nativeName}>{language.nativeName}</Text>
-              </View>
+            <Text style={{ fontSize: 24, marginRight: spacing.md }}>{lang.flag}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ 
+                fontSize: 16,
+                fontWeight: '500',
+                color: Colors.white,
+                marginBottom: 2,
+              }}>
+                {lang.name}
+              </Text>
+              <Text style={{ 
+                fontSize: 14,
+                color: Colors.withOpacity(Colors.white, 0.48),
+              }}>
+                {lang.nativeName}
+              </Text>
             </View>
-            
-            {selectedLanguage === language.code ? (
-              <View style={styles.selectedIndicator}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF3B30" />
-              </View>
-            ) : (
-              <View style={styles.unselectedIndicator} />
+            {language === lang.code && (
+              <Ionicons 
+                name="checkmark-circle" 
+                size={24} 
+                color={Colors.accent}
+                style={{ marginLeft: spacing.md }}
+              />
             )}
           </TouchableOpacity>
         ))}

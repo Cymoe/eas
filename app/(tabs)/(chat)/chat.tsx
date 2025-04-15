@@ -165,9 +165,6 @@ const ChatItem = ({ item }: { item: any }) => (
         )}
       </View>
     </View>
-    <TouchableOpacity style={styles.callButton}>
-      <Ionicons name="call" size={22} color="white" />
-    </TouchableOpacity>
   </TouchableOpacity>
 );
 

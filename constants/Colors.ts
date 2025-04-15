@@ -14,6 +14,8 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    tabBar: 'rgba(18, 18, 18)',
+    tabBarBorder: '#121212',
   },
   dark: {
     text: '#ECEDEE',
@@ -22,5 +24,14 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    tabBar: 'rgba(18, 18, 18)',
+    tabBarBorder: '#121212',
   },
+  // Add base colors
+  white: '#FFFFFF',
+  black: '#121212',
+  accent: '#FF4B4B',
+  red: '#F41857',
+  green: '#6BFF90',
+  orange: '#FFA726',
 };

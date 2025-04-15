@@ -1,58 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
-import { router, Link } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-const { width } = Dimensions.get('window');
-
-// WindSurf Design System Constants
-const windsurf = {
-  colors: {
-    // Primary Colors
-    accent: '#FF3B30',
-    white: '#FFFFFF',
-    night: '#121212',
-    redFlag: '#F41857',
-    greenFlag: '#6BFF90',
-    orangeFlag: '#FFA726',
-    
-    // Opacity Functions
-    withOpacity: (color: string, opacity: number) => {
-      // Convert hex to rgba
-      let r, g, b;
-      if (color.length === 7) {
-        r = parseInt(color.substring(1, 3), 16);
-        g = parseInt(color.substring(3, 5), 16);
-        b = parseInt(color.substring(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      }
-      return color;
-    },
-    
-    // Opacity Levels
-    opacityActive: 1,
-    opacityInactive: 0.48,
-    opacityHovered: 0.64,
-    opacityBgNormal: 0.08,
-    opacityBgHover: 0.16,
-  }
-};
-
-export default function EmailScreen() {
+const EmailRegistrationScreen = () => {
   const [email, setEmail] = useState('');
-  const [isValid, setIsValid] = useState(false);
-  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isValid, setIsValid] = useState(true);
 
   const validateEmail = (text: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmail(text);
+    // Basic email validation
+    const emailRegex = /\S+@\S+\.\S+/;
     setIsValid(emailRegex.test(text));
+    setEmail(text);
   };
 
   const handleContinue = () => {
-    if (isValid) {
-      setIsEmailValid(true);
+    if (isValid && email) {
+      router.push('/onboarding/email-verification');
     }
   };
 
@@ -61,237 +33,299 @@ export default function EmailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       
-      {/* Top header */}
-      <View style={styles.headerContainer}>
+      {/* Header */}
+      <View style={styles.header}>
         <View style={styles.headerContent}>
-          <View style={styles.headerRow}>
-            <Pressable style={styles.backButton} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color={windsurf.colors.white} />
-            </Pressable>
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '33%' }]} />
-              </View>
-              <Text style={styles.progressText}>Step 1 of 3</Text>
-            </View>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Registration</Text>
+            <Text style={styles.headerStep}>1/8</Text>
           </View>
-          
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>What's your email?</Text>
-            <Text style={styles.subtitle}>We'll send you a verification code</Text>
-          </View>
+          <Text style={styles.headerSubtitle}>Email</Text>
+        </View>
+        <TouchableOpacity style={styles.backButton}>
+          <Ionicons name="arrow-back" size={27} color="#FFFFFF" />
+        </TouchableOpacity>
+        
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBackground} />
+          <View style={styles.progressFill} />
         </View>
       </View>
-      
-      {/* Form content */}
-      <View style={styles.formContainer}>
+
+      {/* Main Content */}
+      <View style={styles.content}>
         <View style={styles.inputContainer}>
-          <TextInput
-            style={[
-              styles.input,
-              isValid && styles.validInput,
-              email.length > 0 && !isValid && styles.invalidInput
-            ]}
-            placeholder="Enter your email"
-            placeholderTextColor="rgba(255, 255, 255, 0.48)"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={validateEmail}
-          />
+          <Text style={styles.inputLabel}>What's your email?</Text>
           
-          {email.length > 0 && (
-            <View style={styles.iconContainer}>
-              {isValid ? (
-                <Ionicons name="checkmark-circle" size={24} color={windsurf.colors.greenFlag} />
-              ) : (
-                <Ionicons name="alert-circle" size={24} color={windsurf.colors.redFlag} />
-              )}
-            </View>
-          )}
-        </View>
-        
-        {email.length > 0 && !isValid && (
-          <View style={styles.helperContainer}>
-            <Ionicons name="information-circle-outline" size={16} color={windsurf.colors.redFlag} />
-            <Text style={styles.helperText}>Please enter a valid email address</Text>
+          <View style={styles.textInputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="E.g. abc@email.com"
+              placeholderTextColor="rgba(255, 255, 255, 0.48)"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={validateEmail}
+            />
           </View>
-        )}
+          
+          <View style={styles.helperTextContainer}>
+            <Ionicons 
+              name="information-outline" 
+              size={12} 
+              color="rgba(255, 255, 255, 0.48)" 
+            />
+            <Text style={styles.helperText}>
+              {isValid ? 'Please enter a valid email address.' : 'Please enter a valid email address.'}
+            </Text>
+          </View>
+          
+          <View style={styles.helperTextContainer}>
+            <Ionicons 
+              name="information-outline" 
+              size={12} 
+              color="rgba(255, 255, 255, 0.48)" 
+            />
+            <Text style={styles.helperText}>
+              We will later use this email to verify your account.
+            </Text>
+          </View>
+        </View>
       </View>
-      
-      {/* Bottom action */}
-      <View style={styles.bottomContainer}>
+
+      {/* Footer */}
+      <View style={styles.footer}>
         <View style={styles.buttonContainer}>
-          {isValid ? (
-            <Link href="/onboarding/email-verification" asChild>
-              <TouchableOpacity style={styles.continueButton} activeOpacity={0.7}>
-                <Text style={styles.buttonText}>Continue</Text>
-              </TouchableOpacity>
-            </Link>
-          ) : (
-            <TouchableOpacity 
-              style={[styles.continueButton, !isValid && styles.disabledButton]} 
-              activeOpacity={0.7}
-              onPress={handleContinue}
-              disabled={!isValid}
-            >
-              <Text style={styles.buttonText}>Continue</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.backIconButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={27} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.continueButton, !isValid && styles.continueButtonDisabled]} 
+            onPress={handleContinue}
+            disabled={!isValid}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+          </TouchableOpacity>
         </View>
         
-        <Text style={styles.termsText}>
-          By continuing, you agree to our <Text style={styles.linkText}>Terms of Service</Text> and <Text style={styles.linkText}>Privacy Policy</Text>
-        </Text>
+        <View style={styles.tosContainer}>
+          <Ionicons 
+            name="information-outline" 
+            size={12} 
+            color="rgba(255, 255, 255, 0.48)" 
+          />
+          <Text style={styles.tosText}>
+            By pressing "Continue" you agree with BandMate TOS.
+          </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: windsurf.colors.night,
+    backgroundColor: '#121212',
   },
-  headerContainer: {
-    paddingTop: 60,
-    paddingHorizontal: 16,
+  
+  // Header Styles
+  header: {
+    width: '100%',
+    height: 120,
+    paddingTop: 48,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    backgroundColor: 'rgba(18, 18, 18, 0.64)',
+    zIndex: 2,
   },
   headerContent: {
     flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '100%',
-    marginBottom: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 9999,
-    backgroundColor: windsurf.colors.withOpacity(windsurf.colors.white, windsurf.colors.opacityBgNormal),
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  progressContainer: {
+    alignItems: 'flex-start',
     flex: 1,
   },
-  progressBar: {
+  headerTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  headerTitle: {
+    fontFamily: 'Poppins-SemiBold',
+    fontWeight: '600',
+    fontSize: 20,
+    lineHeight: 22,
+    color: '#FFFFFF',
+  },
+  headerStep: {
+    fontFamily: 'Poppins-SemiBold',
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontFamily: 'Poppins',
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.64)',
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 12,
+    top: 48,
+  },
+  progressContainer: {
+    width: '100%',
     height: 4,
-    backgroundColor: windsurf.colors.withOpacity(windsurf.colors.white, 0.1),
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
+    marginTop: 12,
+  },
+  progressBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 1,
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: windsurf.colors.accent,
-    borderRadius: 2,
+    position: 'absolute',
+    width: '25%', // For 1/8 completion
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 1,
   },
-  progressText: {
-    fontFamily: 'Poppins',
-    fontSize: 12,
-    color: windsurf.colors.withOpacity(windsurf.colors.white, windsurf.colors.opacityInactive),
-  },
-  titleContainer: {
-    width: '100%',
-  },
-  title: {
-    fontFamily: 'Abril Fatface',
-    fontSize: 32,
-    color: windsurf.colors.white,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Poppins',
-    fontSize: 16,
-    color: windsurf.colors.withOpacity(windsurf.colors.white, windsurf.colors.opacityInactive),
-  },
-  formContainer: {
-    paddingHorizontal: 16,
-    marginTop: 40,
+  
+  // Main Content Styles
+  content: {
+    flex: 1,
+    paddingTop: 16,
+    paddingHorizontal: 12,
+    alignItems: 'center',
   },
   inputContainer: {
-    position: 'relative',
     width: '100%',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  input: {
-    height: 56,
-    backgroundColor: windsurf.colors.withOpacity(windsurf.colors.white, windsurf.colors.opacityBgNormal),
+  inputLabel: {
+    width: '100%',
+    fontFamily: 'Abril Fatface',
+    fontWeight: '400',
+    fontSize: 20,
+    lineHeight: 27,
+    color: '#FFFFFF',
+  },
+  textInputContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    width: '100%',
+    gap: 8,
+  },
+  textInput: {
+    width: '100%',
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: windsurf.colors.white,
+    paddingHorizontal: 12,
+    color: '#FFFFFF',
     fontFamily: 'Poppins',
+    fontSize: 16,
+    lineHeight: 24,
   },
-  validInput: {
-    borderWidth: 1,
-    borderColor: windsurf.colors.greenFlag,
-  },
-  invalidInput: {
-    borderWidth: 1,
-    borderColor: windsurf.colors.redFlag,
-  },
-  iconContainer: {
-    position: 'absolute',
-    right: 16,
-    top: 16,
-  },
-  helperContainer: {
+  helperTextContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    width: '100%',
+    height: 12,
+    gap: 4,
   },
   helperText: {
+    flex: 1,
     fontFamily: 'Poppins',
+    fontWeight: '400',
     fontSize: 12,
-    color: windsurf.colors.redFlag,
-    marginLeft: 4,
+    lineHeight: 18,
+    color: 'rgba(255, 255, 255, 0.48)',
+    letterSpacing: -0.03 * 12, // -0.03em
   },
-  bottomContainer: {
+  
+  // Footer Styles
+  footer: {
     position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
+    bottom: 0,
+    width: '100%',
+    paddingTop: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 34,
+    gap: 12,
+    backgroundColor: 'rgba(18, 18, 18, 0)',
+    zIndex: 1,
   },
   buttonContainer: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    height: 48,
+    gap: 8,
+  },
+  backIconButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 85.7143,
   },
   continueButton: {
-    height: 56,
-    backgroundColor: windsurf.colors.accent,
-    borderRadius: 9999,
-    flexDirection: 'row',
+    flex: 1,
+    height: 48,
+    backgroundColor: '#FF3B30',
+    borderRadius: 85.7143,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  disabledButton: {
-    backgroundColor: windsurf.colors.withOpacity(windsurf.colors.accent, 0.3),
-  },
-  buttonText: {
-    fontFamily: 'Poppins',
-    fontSize: 16,
+  continueButtonText: {
+    fontFamily: 'Poppins-Medium',
     fontWeight: '500',
-    color: windsurf.colors.white,
-    marginRight: 8,
-  },
-  termsText: {
-    fontFamily: 'Poppins',
-    fontSize: 12,
-    color: windsurf.colors.withOpacity(windsurf.colors.white, windsurf.colors.opacityInactive),
+    fontSize: 17.1429,
+    lineHeight: 19,
+    color: '#121212',
     textAlign: 'center',
   },
-  linkText: {
-    color: windsurf.colors.accent,
+  tosContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: 12,
+    gap: 4,
+  },
+  tosText: {
+    fontFamily: 'Poppins',
+    fontWeight: '400',
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    color: 'rgba(255, 255, 255, 0.48)',
+    letterSpacing: -0.03 * 12, // -0.03em
+  },
+  continueButtonDisabled: {
+    opacity: 0.48,
   },
 });
+
+export default EmailRegistrationScreen;

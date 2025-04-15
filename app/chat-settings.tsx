@@ -14,8 +14,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, G, ClipPath, Rect, Defs } from 'react-native-svg';
-import RemoveMatchModal from './components/RemoveMatchModal';
-import ReportMusicianModal from './components/ReportMusicianModal';
+import RemoveMatchModal from '../components/RemoveMatchModal';
+import ReportMusicianModal from '../components/ReportMusicianModal';
 
 // Define a type for valid Ionicons names
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -122,7 +122,6 @@ export default function ChatSettingsScreen() {
   const [settings, setSettings] = useState({
     markAsFavorite: true,
     scheduledMessages: false,
-    voiceMessages: true,
     blockLinks: true,
     blockMedia: true,
     blockCopying: true,
@@ -249,14 +248,6 @@ export default function ChatSettingsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          
-          <SettingToggle
-            label="Voice messages"
-            iconName="mic"
-            value={settings.voiceMessages}
-            onValueChange={() => toggleSetting('voiceMessages')}
-            isPremium={true}
-          />
         </View>
         
         {/* Privacy & Security Section */}

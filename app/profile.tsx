@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import CloseAccountModal from './components/CloseAccountModal';
-import HelpImproveModal from './components/HelpImproveModal';
+import CloseAccountModal from '../components/CloseAccountModal';
+import HelpImproveModal from '../components/HelpImproveModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Import Language type and languages array
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+const languages: Language[] = [
+  { code: 'en-US', name: 'English (US)', nativeName: 'English (US)', flag: '🇺🇸' },
+  { code: 'zh-CN', name: 'Mandarin Chinese', nativeName: '普通话 / 汉语', flag: '🇨🇳' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  // ... other languages
+];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   
   // State for toggles
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -20,6 +36,27 @@ export default function ProfileScreen() {
   const [autoUpdates, setAutoUpdates] = useState(true);
   const [closeAccountModalVisible, setCloseAccountModalVisible] = useState(false);
   const [helpImproveModalVisible, setHelpImproveModalVisible] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('English (US)');
+
+  // Load app language on mount
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem('appLanguage');
+        if (savedLanguage) {
+          // Find the language name from the code
+          const language = languages.find(l => l.code === savedLanguage);
+          if (language) {
+            setCurrentLanguage(language.name);
+          }
+        }
+      } catch (error) {
+        console.log('Error loading app language:', error);
+      }
+    };
+    
+    loadLanguage();
+  }, []);
 
   const handleCloseAccount = () => {
     // Logic to close the account would go here
@@ -258,7 +295,7 @@ export default function ProfileScreen() {
                 <Ionicons name="language" size={24} color="#A19375" />
                 <View>
                   <Text style={styles.settingTitle}>App language</Text>
-                  <Text style={styles.settingSubtitle}>English (US)</Text>
+                  <Text style={styles.settingSubtitle}>{currentLanguage}</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#F8F9FB" />

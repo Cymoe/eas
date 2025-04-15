@@ -3,8 +3,8 @@ import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
+import { TabIcon } from '@/components/ui/TabIcon';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -14,40 +14,42 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarStyle: Platform.select({
+          ios: {
+            position: 'absolute',
+            backgroundColor: Colors[colorScheme ?? 'dark'].tabBar,
+            borderTopWidth: 0,
+          },
+          default: {
+            backgroundColor: Colors[colorScheme ?? 'dark'].tabBar,
+            borderTopWidth: 0,
+          },
+        }),
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.48)',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a solid black background to match the design
-            position: 'absolute',
-            backgroundColor: '#000000',
-          },
-          default: {
-            backgroundColor: '#000000',
-          },
-        }),
       }}>
       <Tabs.Screen
         name="(matching)"
         options={{
           title: 'Match',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="match" color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="(chat)/chat"
         options={{
           title: 'Chat',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="message.fill" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="chat" color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="(events)/events"
         options={{
           title: 'Events',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} size={24} />,
         }}
       />
     </Tabs>

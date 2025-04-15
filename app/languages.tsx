@@ -15,26 +15,104 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Define languages type
-type LanguagesData = {
-  [key: string]: boolean;
-};
-
-// List of available languages
+// List of available languages with native names
 const LANGUAGES = [
-  'Albanian',
-  'Chinese Traditional',
-  'Croatian',
-  'English',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Spanish',
-  'Swedish',
-  'Serbian',
-  'Japanese',
+  { code: 'en', name: 'English', native: 'English' },
+  { code: 'zh', name: 'Mandarin Chinese', native: '普通话 / 汉语' },
+  { code: 'hi', name: 'Hindi', native: 'हिन्दी' },
+  { code: 'es', name: 'Spanish', native: 'Español' },
+  { code: 'fr', name: 'French', native: 'Français' },
+  { code: 'ar', name: 'Standard Arabic', native: 'العربية' },
+  { code: 'bn', name: 'Bengali', native: 'বাংলা' },
+  { code: 'ru', name: 'Russian', native: 'Русский' },
+  { code: 'pt', name: 'Portuguese', native: 'Português' },
+  { code: 'id', name: 'Indonesian', native: 'Bahasa Indonesia' },
+  { code: 'ur', name: 'Urdu', native: 'اُردُو' },
+  { code: 'de', name: 'German', native: 'Deutsch' },
+  { code: 'ja', name: 'Japanese', native: '日本語' },
+  { code: 'sw', name: 'Swahili', native: 'Kiswahili' },
+  { code: 'mr', name: 'Marathi', native: 'मराठी' },
+  { code: 'te', name: 'Telugu', native: 'తెలుగు' },
+  { code: 'pa_west', name: 'Western Punjabi', native: 'پنجابی' },
+  { code: 'wuu', name: 'Wu Chinese', native: '吴语' },
+  { code: 'ta', name: 'Tamil', native: 'தமிழ்' },
+  { code: 'tr', name: 'Turkish', native: 'Türkçe' },
+  { code: 'ko', name: 'Korean', native: '한국어' },
+  { code: 'vi', name: 'Vietnamese', native: 'Tiếng Việt' },
+  { code: 'yue', name: 'Cantonese', native: '粤语 / 廣東話' },
+  { code: 'jv', name: 'Javanese', native: 'ꦧꦱꦗꦮ' },
+  { code: 'it', name: 'Italian', native: 'Italiano' },
+  { code: 'arz', name: 'Egyptian Arabic', native: 'العامية المصرية' },
+  { code: 'ha', name: 'Hausa', native: 'Harshen Hausa' },
+  { code: 'th', name: 'Thai', native: 'ภาษาไทย' },
+  { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી' },
+  { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ' },
+  { code: 'fa', name: 'Persian', native: 'فارسی' },
+  { code: 'bho', name: 'Bhojpuri', native: 'भोजपुरी' },
+  { code: 'nan', name: 'Southern Min', native: '闽南语' },
+  { code: 'hak', name: 'Hakka', native: '客家话' },
+  { code: 'cjy', name: 'Jinyu', native: '晋语' },
+  { code: 'fil', name: 'Filipino', native: 'Wikang Filipino' },
+  { code: 'my', name: 'Burmese', native: 'မြန်မာဘာသာ' },
+  { code: 'pl', name: 'Polish', native: 'Polski' },
+  { code: 'yo', name: 'Yoruba', native: 'Yorùbá' },
+  { code: 'or', name: 'Odia', native: 'ଓଡ଼ିଆ' },
+  { code: 'ml', name: 'Malayalam', native: 'മലയാളം' },
+  { code: 'hsn', name: 'Xiang Chinese', native: '湘语' },
+  { code: 'mai', name: 'Maithili', native: 'मैथिली' },
+  { code: 'uk', name: 'Ukrainian', native: 'Українська' },
+  { code: 'ary', name: 'Moroccan Arabic', native: 'الدارجة' },
+  { code: 'pa_east', name: 'Eastern Punjabi', native: 'ਪੰਜਾਬੀ' },
+  { code: 'su', name: 'Sundanese', native: 'Basa Sunda' },
+  { code: 'arq', name: 'Algerian Arabic', native: 'الدارجة الجزائرية' },
+  { code: 'apd', name: 'Sudanese Arabic', native: 'اللهجة السودانية' },
+  { code: 'pcm', name: 'Nigerian Pidgin', native: 'Naija / Pidgin' },
+  { code: 'sq', name: 'Albanian', native: 'shqip' },
+  { code: 'hy', name: 'Armenian', native: 'Հայերեն' },
+  { code: 'eu', name: 'Basque', native: 'Euskara' },
+  { code: 'be', name: 'Belarusian', native: 'беларуская' },
+  { code: 'bs', name: 'Bosnian', native: 'bosanski jezik' },
+  { code: 'br', name: 'Breton', native: 'brezhoneg' },
+  { code: 'bg', name: 'Bulgarian', native: 'български' },
+  { code: 'ca', name: 'Catalan', native: 'català' },
+  { code: 'co', name: 'Corsican', native: 'corsu' },
+  { code: 'hr', name: 'Croatian', native: 'hrvatski jezik' },
+  { code: 'cs', name: 'Czech', native: 'čeština' },
+  { code: 'da', name: 'Danish', native: 'dansk' },
+  { code: 'nl', name: 'Dutch', native: 'Nederlands' },
+  { code: 'et', name: 'Estonian', native: 'eesti keel' },
+  { code: 'fo', name: 'Faroese', native: 'føroyskt' },
+  { code: 'fi', name: 'Finnish', native: 'suomi' },
+  { code: 'fy', name: 'Frisian', native: 'Frysk' },
+  { code: 'gl', name: 'Galician', native: 'galego' },
+  { code: 'ka', name: 'Georgian', native: 'ქართული' },
+  { code: 'el', name: 'Greek', native: 'Ελληνικά' },
+  { code: 'hu', name: 'Hungarian', native: 'magyar' },
+  { code: 'is', name: 'Icelandic', native: 'íslenska' },
+  { code: 'ga', name: 'Irish', native: 'Gaeilge' },
+  { code: 'lv', name: 'Latvian', native: 'latviešu valoda' },
+  { code: 'lt', name: 'Lithuanian', native: 'lietuvių kalba' },
+  { code: 'lb', name: 'Luxembourgish', native: 'Lëtzebuergesch' },
+  { code: 'mk', name: 'Macedonian', native: 'македонски' },
+  { code: 'mt', name: 'Maltese', native: 'Malti' },
+  { code: 'gv', name: 'Manx', native: 'Gaelg' },
+  { code: 'no', name: 'Norwegian', native: 'norsk' },
+  { code: 'oc', name: 'Occitan', native: 'occitan' },
+  { code: 'rm', name: 'Romani', native: 'romani' },
+  { code: 'se', name: 'Sami', native: 'Sámegiella' },
+  { code: 'gd', name: 'Scottish Gaelic', native: 'Gàidhlig' },
+  { code: 'sr', name: 'Serbian', native: 'српски језик' },
+  { code: 'sk', name: 'Slovak', native: 'slovenčina' },
+  { code: 'sl', name: 'Slovenian', native: 'slovenščina' },
+  { code: 'sv', name: 'Swedish', native: 'svenska' },
+  { code: 'cy', name: 'Welsh', native: 'Cymraeg' },
+  { code: 'yi', name: 'Yiddish', native: 'ייִדיש' }
 ];
+
+// Update the LanguagesData type to use language codes
+type LanguagesData = {
+  [code: string]: boolean;
+};
 
 export default function LanguagesScreen() {
   const { returnTo } = useLocalSearchParams<{ returnTo: string }>();
@@ -44,10 +122,10 @@ export default function LanguagesScreen() {
     // Initialize with all languages set to false
     const initialState: LanguagesData = {};
     LANGUAGES.forEach(lang => {
-      initialState[lang] = false;
+      initialState[lang.code] = false;
     });
     // Set English to true by default
-    initialState['English'] = true;
+    initialState['en'] = true;
     return initialState;
   });
 
@@ -122,12 +200,15 @@ export default function LanguagesScreen() {
       {/* Languages Options */}
       <ScrollView style={styles.content}>
         {LANGUAGES.map((language, index) => (
-          <React.Fragment key={language}>
+          <React.Fragment key={language.code}>
             <View style={styles.optionRow}>
-              <Text style={styles.optionText}>{language}</Text>
+              <View style={styles.languageInfo}>
+                <Text style={styles.languageName}>{language.name}</Text>
+                <Text style={styles.nativeName}>{language.native}</Text>
+              </View>
               <Switch
-                value={languages[language]}
-                onValueChange={(value) => handleToggleChange(language, value)}
+                value={languages[language.code]}
+                onValueChange={(value) => handleToggleChange(language.code, value)}
                 trackColor={{ false: 'rgba(255, 255, 255, 0.08)', true: '#FF3B30' }}
                 thumbColor={'#FFFFFF'}
                 ios_backgroundColor="rgba(255, 255, 255, 0.08)"
@@ -203,11 +284,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
   },
-  optionText: {
+  languageInfo: {
+    flex: 1,
+  },
+  languageName: {
     fontFamily: 'Poppins',
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '400',
+  },
+  nativeName: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.48)',
+    marginTop: 2,
   },
   divider: {
     height: 1,
