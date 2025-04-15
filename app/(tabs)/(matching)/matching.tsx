@@ -21,6 +21,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Swipeable } from 'react-native-gesture-handler';
+import ReportConfirmationModal from '../../../components/ui/ReportConfirmationModal';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.15;
@@ -66,47 +67,8 @@ export default function MatchingScreen() {
   const [nextIndex, setNextIndex] = useState(1);
   const [swiping, setSwiping] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [profiles] = useState<Profile[]>([
-    {
-      id: 'avril-123',
-      name: 'Avril',
-      type: 'artist',
-      location: 'Los Angeles, CA',
-      distance: 33,
-      matchPercent: 64,
-      genres: ['Pop', 'Rock', 'Alternative'],
-      commonMatches: 4,
-      bio: 'Lead vocalist and guitarist. Into pop punk and rock.',
-      image: require('../../../assets/images/avril.png'),
-      monthlyViews: 528
-    },
-    {
-      id: 'drummer-456',
-      name: 'Travis Barker',
-      type: 'artist',
-      location: 'San Francisco, CA',
-      distance: 15,
-      matchPercent: 78,
-      genres: ['Punk Rock', 'Hip Hop', 'Rock'],
-      commonMatches: 2,
-      bio: 'Drummer. Collaborating with artists across genres from punk rock to hip hop.',
-      image: require('../../../assets/images/drummer.png'),
-      monthlyViews: 412
-    },
-    {
-      id: 'artic-789',
-      name: 'Arctic Monkeys',
-      type: 'band',
-      location: 'New York, NY',
-      distance: 42,
-      matchPercent: 91,
-      genres: ['Indie Rock', 'Alternative', 'Rock'],
-      commonMatches: 6,
-      bio: 'Looking for a lead guitarist. Must love indie rock.',
-      image: require('../../../assets/images/artic.png'),
-      monthlyViews: 743
-    }
-  ]);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [profileToReport, setProfileToReport] = useState<Profile | null>(null);
 
   // Animated values
   const translateX = useSharedValue(0);
@@ -544,7 +506,7 @@ export default function MatchingScreen() {
                       fadeDuration={0}
                     />
                     {renderOverlays(isCurrentCard)}
-                    {renderCardContent(profile)}
+                    {renderCardContent(profile, isCurrentCard)}
                   </Animated.View>
                 </GestureDetector>
               ) : (
@@ -555,7 +517,7 @@ export default function MatchingScreen() {
                     resizeMode="cover"
                     fadeDuration={0}
                   />
-                  {renderCardContent(profile)}
+                  {renderCardContent(profile, isCurrentCard)}
                 </Animated.View>
               )}
             </View>
@@ -566,7 +528,7 @@ export default function MatchingScreen() {
   };
 
   // Simplified card content rendering to match the Figma design exactly
-  const renderCardContent = (profile: Profile) => {
+  const renderCardContent = (profile: Profile, isTopCard: boolean) => {
     return (
       <>
         {/* Verified badge */}
@@ -616,6 +578,19 @@ export default function MatchingScreen() {
               </Text>
               <Ionicons name="chevron-forward" size={24} color="#FFFFFF" style={styles.bioArrow} />
             </View>
+            
+            {/* Report button */}
+            <TouchableOpacity 
+              style={styles.reportButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setProfileToReport(profile);
+                setReportModalVisible(true);
+              }}
+            >
+              <Ionicons name="flag-outline" size={16} color="rgba(255, 255, 255, 0.48)" />
+              <Text style={styles.reportButtonText}>Report this musician</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
       </>
@@ -667,6 +642,48 @@ export default function MatchingScreen() {
     );
   };
 
+  const profiles: Profile[] = [
+    {
+      id: 'avril-123',
+      name: 'Avril',
+      type: 'artist',
+      location: 'Los Angeles, CA',
+      distance: 33,
+      matchPercent: 64,
+      genres: ['Pop', 'Rock', 'Alternative'],
+      commonMatches: 4,
+      bio: 'Lead vocalist and guitarist. Into pop punk and rock.',
+      image: require('../../../assets/images/avril.png'),
+      monthlyViews: 528
+    },
+    {
+      id: 'drummer-456',
+      name: 'Travis Barker',
+      type: 'artist',
+      location: 'San Francisco, CA',
+      distance: 15,
+      matchPercent: 78,
+      genres: ['Punk Rock', 'Hip Hop', 'Rock'],
+      commonMatches: 2,
+      bio: 'Drummer. Collaborating with artists across genres from punk rock to hip hop.',
+      image: require('../../../assets/images/drummer.png'),
+      monthlyViews: 412
+    },
+    {
+      id: 'artic-789',
+      name: 'Arctic Monkeys',
+      type: 'band',
+      location: 'New York, NY',
+      distance: 42,
+      matchPercent: 91,
+      genres: ['Indie Rock', 'Alternative', 'Rock'],
+      commonMatches: 6,
+      bio: 'Looking for a lead guitarist. Must love indie rock.',
+      image: require('../../../assets/images/artic.png'),
+      monthlyViews: 743
+    }
+  ];
+
   return (
     <GestureHandlerRootView style={{flex: 1, backgroundColor: '#121212'}}>
       <View style={styles.container}>
@@ -688,16 +705,18 @@ export default function MatchingScreen() {
               </View>
             </View>
             <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <Path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.37 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.64 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16ZM16 17H8V11C8 8.52 9.51 6.5 12 6.5C14.49 6.5 16 8.52 16 11V17Z" fill="white" fillOpacity="0.48"/>
-                </Svg>
-              </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.iconButton}
                 onPress={() => {
-                  router.navigate('/(tabs)/(matching)/filters');
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/(tabs)/(matching)/notifications');
                 }}
+              >
+                <Ionicons name="notifications" size={24} color="rgba(255, 255, 255, 0.48)" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => router.push('/filters')}
               >
                 <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <Path d="M10 18H14C14.55 18 15 17.55 15 17C15 16.45 14.55 16 14 16H10C9.45 16 9 16.45 9 17C9 17.55 9.45 18 10 18ZM3 7C3 7.55 3.45 8 4 8H20C20.55 8 21 7.55 21 7C21 6.45 20.55 6 20 6H4C3.45 6 3 6.45 3 7ZM6 13H18C18.55 13 19 12.55 19 12C19 11.45 18.55 11 18 11H6C5.45 11 5 11.45 5 12C5 12.55 5.45 13 6 13Z" fill="white" fillOpacity="0.48"/>
@@ -769,6 +788,16 @@ export default function MatchingScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      
+      {/* Report Confirmation Modal - Moved outside the container View */}
+      {profileToReport && (
+        <ReportConfirmationModal
+          isVisible={reportModalVisible}
+          onClose={() => setReportModalVisible(false)}
+          userName={profileToReport.name}
+          userType={profileToReport.type === 'band' ? 'Band' : 'Solo Artist'}
+        />
+      )}
     </GestureHandlerRootView>
   );
 }
@@ -1117,5 +1146,21 @@ const styles = StyleSheet.create({
   },
   bioArrow: {
     marginLeft: 8,
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 9999, // Fully rounded per WindSurf design system
+  },
+  reportButtonText: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.48)',
+    marginLeft: 4,
   },
 });

@@ -8,26 +8,31 @@ export default {
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
-  scheme: "eas",
+  scheme: "com.cymoe.eas",
   userInterfaceStyle: "automatic",
   splash: {
-    image: "./assets/images/splash.png",
+    image: "./assets/images/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff"
+    backgroundColor: "#121212"
   },
   assetBundlePatterns: [
     "**/*"
   ],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.eas"
+    bundleIdentifier: "com.cymoe.eas",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      NSLocationWhenInUseUsageDescription: "We need your location to show you nearby venues and music spots.",
+      NSLocationAlwaysAndWhenInUseUsageDescription: "We need your location to show you nearby venues and music spots."
+    }
   },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
     },
-    package: "com.eas"
+    package: "com.cymoe.eas"
   },
   web: {
     favicon: "./assets/images/favicon.png"
@@ -37,5 +42,13 @@ export default {
   ],
   experiments: {
     typedRoutes: true
+  },
+  extra: {
+    router: {
+      origin: false
+    },
+    eas: {
+      projectId: "ee17305f-c1cb-4fcf-a1b1-394613ac1619"
+    }
   }
 }; 

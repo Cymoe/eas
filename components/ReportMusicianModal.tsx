@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +21,24 @@ interface ReportMusicianModalProps {
 }
 
 export default function ReportMusicianModal({ visible, onClose, onReport }: ReportMusicianModalProps) {
+  const handleReportConfirm = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onClose(); // Close the modal first
+    
+    // Call the onReport callback
+    onReport();
+    
+    // Navigate to the report screen
+    router.push({
+      pathname: '/report',
+      params: {
+        userName: 'Musician',
+        userType: 'Artist',
+        userImage: ''
+      }
+    });
+  };
+  
   return (
     <Modal
       animationType="fade"
@@ -34,7 +54,7 @@ export default function ReportMusicianModal({ visible, onClose, onReport }: Repo
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>What would you like to do?</Text>
           
-          <TouchableOpacity style={styles.actionButton} onPress={onReport}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleReportConfirm}>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>Yes, report this musician</Text>
               <Text style={styles.actionSubtitle}>Select a reason why and motivate it.</Text>
