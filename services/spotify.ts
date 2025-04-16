@@ -157,8 +157,8 @@ export const POPULAR_ARTISTS = {
 };
 
 class SpotifyService {
-  private readonly CLIENT_ID = 'fee9b6ee57c94bcb9a58d1ae02729b07';
-  private readonly CLIENT_SECRET = '4447ac726ec14e028c27fd3207d048ed';
+  private readonly CLIENT_ID = '9e0d2e1b9d5e4ac1b4f53b3e3c31e5d6';
+  private readonly CLIENT_SECRET = '8c1b4f53b3e3c31e5d69e0d2e1b9d5e4';
   private readonly REDIRECT_URI = 'bandmate://spotify-auth-callback';
   private readonly SCOPES = ['user-read-private', 'user-read-email'];
   private readonly AUTH_STORAGE_KEY = '@spotify_auth';

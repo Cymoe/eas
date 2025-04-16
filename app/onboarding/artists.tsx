@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ActivityIndicator, Dimensions, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -245,7 +245,12 @@ export default function ArtistsScreen() {
   const [popularArtists, setPopularArtists] = useState<SpotifyArtist[]>(DEFAULT_ARTISTS);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const minimumArtists = 3;
+  const BATCH_SIZE = 20;
+  const flatListRef = useRef<FlatList>(null);
 
   // Load popular artists on mount
   useEffect(() => {
@@ -325,15 +330,20 @@ export default function ArtistsScreen() {
     loadPopularArtists();
   }, []);
 
-  // Debounced search using public endpoint
+  // Debounced search using public endpoint with pagination
   useEffect(() => {
     const searchTimer = setTimeout(async () => {
       if (searchQuery.trim()) {
         setIsLoading(true);
         setError(null);
+        setOffset(0); // Reset offset when search query changes
+        setHasMore(true); // Reset hasMore when search query changes
+        setSearchResults([]); // Clear previous results
         try {
-          const results = await spotifyService.searchArtistsPublic(searchQuery);
-          setSearchResults(results);
+          const results = await spotifyService.searchArtistsWithPagination(searchQuery, 0, BATCH_SIZE);
+          setSearchResults(results.items);
+          setHasMore(results.hasMore);
+          setOffset(results.nextOffset);
         } catch (err) {
           setError('Failed to search artists. Please try again.');
           console.error('Search error:', err);
@@ -342,11 +352,38 @@ export default function ArtistsScreen() {
         }
       } else {
         setSearchResults([]);
+        setOffset(0);
+        setHasMore(true);
       }
     }, 500);
 
     return () => clearTimeout(searchTimer);
   }, [searchQuery]);
+
+  const loadMoreArtists = useCallback(async () => {
+    if (!hasMore || isLoadingMore || isLoading || !searchQuery.trim()) return;
+    
+    console.log('Loading more artists at offset:', offset);
+    setIsLoadingMore(true);
+    try {
+      const results = await spotifyService.searchArtistsWithPagination(searchQuery, offset, BATCH_SIZE);
+      console.log('Loaded', results.items.length, 'more artists, hasMore:', results.hasMore);
+      setSearchResults(prev => [...prev, ...results.items]);
+      setHasMore(results.hasMore);
+      setOffset(results.nextOffset);
+    } catch (err) {
+      console.error('Error loading more artists:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [hasMore, isLoadingMore, isLoading, searchQuery, offset]);
+
+  const handleEndReached = () => {
+    console.log('End reached, hasMore:', hasMore, 'isLoadingMore:', isLoadingMore);
+    if (searchQuery.trim() && hasMore && !isLoadingMore) {
+      loadMoreArtists();
+    }
+  };
 
   const toggleArtist = (artist: SpotifyArtist) => {
     setSelectedArtists(prev => {
@@ -375,6 +412,46 @@ export default function ArtistsScreen() {
   // Determine which artists to display
   const displayedArtists = searchQuery.trim() ? searchResults : popularArtists;
 
+  const renderArtistItem = ({ item: artist }: { item: SpotifyArtist }) => {
+    const isSelected = selectedArtists.some(a => a.id === artist.id);
+    const color = getColorForArtist(parseInt(artist.id));
+    
+    return (
+      <ArtistContainer key={artist.id} onPress={() => toggleArtist(artist)}>
+        <ArtistImageContainer selected={isSelected}>
+          {artist.images?.[0]?.url ? (
+            <ArtistImage source={{ uri: artist.images[0].url }} />
+          ) : (
+            <ArtistImagePlaceholder color={color}>
+              <ArtistInitial>{artist.name[0]}</ArtistInitial>
+            </ArtistImagePlaceholder>
+          )}
+          {isSelected && (
+            <CheckmarkContainer>
+              <Ionicons name="checkmark-circle" size={48} color={Colors.green} />
+            </CheckmarkContainer>
+          )}
+        </ArtistImageContainer>
+        <ArtistName>{artist.name}</ArtistName>
+      </ArtistContainer>
+    );
+  };
+
+  const ListFooterComponent = () => {
+    if (!searchQuery.trim() || (!isLoadingMore && !hasMore)) return null;
+    
+    return (
+      <View style={styles.loadingMoreContainer}>
+        {isLoadingMore && <ActivityIndicator color="rgba(255, 255, 255, 0.64)" />}
+        {!isLoadingMore && hasMore && (
+          <TouchableOpacity onPress={loadMoreArtists}>
+            <Text style={styles.loadMoreText}>Load more</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -400,115 +477,104 @@ export default function ArtistsScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Choose 3 or more artists you like.</Text>
-            <Text style={styles.subtitle}>Tell us about your musical idols.</Text>
-          </View>
-          
-          {/* Search Field */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchField}>
-              <Ionicons name="search" size={32} color="rgba(255, 255, 255, 0.64)" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search for artists..."
-                placeholderTextColor="rgba(255, 255, 255, 0.48)"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {isLoading && (
-                <ActivityIndicator color="rgba(255, 255, 255, 0.64)" />
-              )}
-            </View>
-            <Text style={styles.searchHint}>
-              {error || "Search for your favorite artists"}
-            </Text>
-          </View>
-          
-          {/* Selection Requirement */}
-          <View style={styles.requirementContainer}>
-            <Ionicons name="information-circle-outline" size={12} color="#828282" />
-            <Text style={styles.requirementText}>
-              Choose at least {selectedArtists.length}/{minimumArtists}
-            </Text>
-          </View>
-          
-          {/* Artists Grid */}
-          <View style={styles.artistsGrid}>
-            {isLoading && displayedArtists.length === 0 ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.64)" />
-                <Text style={styles.loadingText}>Loading artists...</Text>
-              </View>
-            ) : displayedArtists.length > 0 ? (
-              <ArtistGrid>
-                {displayedArtists.map((artist) => {
-                  const isSelected = selectedArtists.some(a => a.id === artist.id);
-                  const color = getColorForArtist(parseInt(artist.id));
-                  
-                  return (
-                    <ArtistContainer key={artist.id} onPress={() => toggleArtist(artist)}>
-                      <ArtistImageContainer selected={isSelected}>
-                        {artist.images?.[0]?.url ? (
-                          <ArtistImage source={{ uri: artist.images[0].url }} />
-                        ) : (
-                          <ArtistImagePlaceholder color={color}>
-                            <ArtistInitial>{artist.name[0]}</ArtistInitial>
-                          </ArtistImagePlaceholder>
-                        )}
-                        {isSelected && (
-                          <CheckmarkContainer>
-                            <Ionicons name="checkmark-circle" size={48} color={Colors.green} />
-                          </CheckmarkContainer>
-                        )}
-                      </ArtistImageContainer>
-                      <ArtistName>{artist.name}</ArtistName>
-                    </ArtistContainer>
-                  );
-                })}
-              </ArtistGrid>
-            ) : searchQuery.trim() ? (
-              <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsText}>No artists found</Text>
-                <Text style={styles.noResultsSubtext}>Try searching for something else</Text>
-              </View>
-            ) : error ? (
-              <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsText}>Could not load artists</Text>
-                <Text style={styles.noResultsSubtext}>Please try searching instead</Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Selected Artists Section */}
-          {selectedArtists.length > 0 && (
-            <View style={styles.selectedSection}>
-              <Text style={styles.selectedTitle}>Selected Artists</Text>
-              <View style={styles.selectedGrid}>
-                {selectedArtists.map((artist) => (
-                  <TouchableOpacity
-                    key={artist.id}
-                    style={styles.selectedArtistChip}
-                    onPress={() => toggleArtist(artist)}
-                  >
-                    {artist.images?.[0]?.url && (
-                      <Image 
-                        source={{ uri: artist.images[0].url }}
-                        style={styles.selectedArtistImage}
-                      />
-                    )}
-                    <Text style={styles.selectedArtistName}>{artist.name}</Text>
-                    <Ionicons name="close-circle" size={20} color="rgba(255, 255, 255, 0.64)" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+      {/* Main Content Area */}
+      <View style={styles.mainContent}>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Choose 3 or more artists you like.</Text>
+          <Text style={styles.subtitle}>Tell us about your musical idols.</Text>
         </View>
-      </ScrollView>
+        
+        {/* Search Field */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchField}>
+            <Ionicons name="search" size={32} color="rgba(255, 255, 255, 0.64)" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for artists..."
+              placeholderTextColor="rgba(255, 255, 255, 0.48)"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {isLoading && !isLoadingMore && (
+              <ActivityIndicator color="rgba(255, 255, 255, 0.64)" />
+            )}
+          </View>
+          <Text style={styles.searchHint}>
+            {error || "Search for your favorite artists"}
+          </Text>
+        </View>
+        
+        {/* Selection Requirement */}
+        <View style={styles.requirementContainer}>
+          <Ionicons name="information-circle-outline" size={12} color="#828282" />
+          <Text style={styles.requirementText}>
+            Choose at least {selectedArtists.length}/{minimumArtists}
+          </Text>
+        </View>
+        
+        {/* Artists Grid */}
+        <View style={styles.artistsGrid}>
+          {isLoading && displayedArtists.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.64)" />
+              <Text style={styles.loadingText}>Loading artists...</Text>
+            </View>
+          ) : displayedArtists.length > 0 ? (
+            <FlatList
+              ref={flatListRef}
+              data={displayedArtists}
+              renderItem={renderArtistItem}
+              keyExtractor={(item) => item.id}
+              numColumns={3}
+              contentContainerStyle={styles.flatListContent}
+              columnWrapperStyle={styles.columnWrapper}
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={ListFooterComponent}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={BATCH_SIZE}
+              maxToRenderPerBatch={BATCH_SIZE}
+              windowSize={5}
+            />
+          ) : searchQuery.trim() ? (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>No artists found</Text>
+              <Text style={styles.noResultsSubtext}>Try searching for something else</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>Could not load artists</Text>
+              <Text style={styles.noResultsSubtext}>Please try searching instead</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Selected Artists Section */}
+        {selectedArtists.length > 0 && (
+          <View style={styles.selectedSection}>
+            <Text style={styles.selectedTitle}>Selected Artists</Text>
+            <View style={styles.selectedGrid}>
+              {selectedArtists.map((artist) => (
+                <TouchableOpacity
+                  key={artist.id}
+                  style={styles.selectedArtistChip}
+                  onPress={() => toggleArtist(artist)}
+                >
+                  {artist.images?.[0]?.url && (
+                    <Image 
+                      source={{ uri: artist.images[0].url }}
+                      style={styles.selectedArtistImage}
+                    />
+                  )}
+                  <Text style={styles.selectedArtistName}>{artist.name}</Text>
+                  <Ionicons name="close-circle" size={20} color="rgba(255, 255, 255, 0.64)" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Continue Button */}
       <LinearGradient
@@ -623,15 +689,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 1,
   },
-  scrollView: {
+  mainContent: {
     flex: 1,
-    marginTop: 16,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 160,
+    paddingHorizontal: 16,
   },
   titleContainer: {
+    marginTop: 16,
     marginBottom: 16,
   },
   title: {
@@ -689,53 +752,72 @@ const styles = StyleSheet.create({
     letterSpacing: -0.03,
   },
   artistsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flex: 1,
+    marginTop: 8,
   },
-  artistContainer: {
-    width: 108,
-    alignItems: 'center',
+  flatListContent: {
+    paddingBottom: 120, // Add extra padding at bottom to ensure we can scroll past the last row
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
     marginBottom: 24,
   },
-  artistImageContainer: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    overflow: 'hidden',
-    marginBottom: 8,
-    position: 'relative',
-  },
-  selectedArtistImageContainer: {
-    borderWidth: 3,
-    borderColor: '#1ED760',
-  },
-  artistImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 54,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
-  artistInitial: {
+  loadingText: {
     fontFamily: 'Poppins',
-    fontSize: 40,
-    fontWeight: 'bold',
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.64)',
+    marginTop: 16,
+  },
+  loadingMoreContainer: {
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  loadMoreText: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.64)',
+    textDecorationLine: 'underline',
+  },
+  selectedSection: {
+    marginTop: 24,
+  },
+  selectedTitle: {
     color: '#FFFFFF',
-  },
-  checkmarkContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-  },
-  artistName: {
-    fontFamily: 'Poppins',
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
+    marginBottom: 12,
+  },
+  selectedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  selectedArtistChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 9999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  selectedArtistImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  selectedArtistName: {
     color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
   continueGradient: {
     position: 'absolute',
@@ -794,67 +876,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.03,
     lineHeight: 18,
   },
-  artistImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-  },
-  errorText: {
-    color: '#F41857',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  selectedSection: {
-    marginTop: 24,
-  },
-  selectedTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 12,
-  },
-  selectedGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  selectedArtistChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 9999,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  selectedArtistImage: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  selectedArtistName: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    width: '100%',
-  },
-  loadingText: {
-    color: 'rgba(255, 255, 255, 0.64)',
-    marginTop: 16,
-    fontSize: 14,
-  },
   noResultsContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
-    width: '100%',
+    alignItems: 'center',
+    padding: 40,
   },
   noResultsText: {
     color: '#FFFFFF',

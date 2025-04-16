@@ -1,25 +1,26 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
+import { View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { TranslationProvider } from '../context/TranslationContext';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { SplashScreen } from '../components/SplashScreen';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    // Hide splash screen after a short delay
-    setTimeout(() => {
-      SplashScreen.hideAsync();
-    }, 500);
-  }, []);
+  // Handle splash screen finish
+  const handleSplashFinish = () => {
+    setIsReady(true);
+  };
+
+  if (!isReady) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
+  }
 
   return (
     <TranslationProvider>
