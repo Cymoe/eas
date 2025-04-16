@@ -9,25 +9,25 @@ import {
   StatusBar,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-  interpolate,
-  Extrapolate,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { spotifyService, type SpotifyArtist as SpotifyApiArtist, type SpotifyTrack } from '../services/spotify';
+import { Typography } from '../components/Typography';
+import { Card } from '../components/Card';
+import { colors } from '../config/colors';
+import { spacing } from '../config/spacing';
 
 const { width } = Dimensions.get('window');
+
+interface RouteParams {
+  artistId: string;
+}
 
 // Define availability type
 type AvailabilityData = {
@@ -48,10 +48,17 @@ type LanguagesData = {
   [key: string]: boolean;
 };
 
-export default function ArtistProfileScreen() {
-  // Get parameters passed to this screen
+export default function ArtistProfileScreen({ route }: { route: { params: RouteParams } }) {
+  const { artistId } = route.params;
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   
+  // Add new state for Spotify data
+  const [artistData, setArtistData] = useState<SpotifyApiArtist | null>(null);
+  const [topTracks, setTopTracks] = useState<SpotifyTrack[]>([]);
+  const [relatedArtists, setRelatedArtists] = useState<SpotifyApiArtist[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // State for availability
   const [availability, setAvailability] = useState<AvailabilityData>({
     weekdays: true,
@@ -108,7 +115,151 @@ export default function ArtistProfileScreen() {
       };
     }, [])
   );
-  
+
+  // Load Spotify data
+  useEffect(() => {
+    const loadSpotifyData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [artistData, tracks, related] = await Promise.all([
+          spotifyService.getArtistPublic(artistId),
+          spotifyService.getArtistTopTracksPublic(artistId),
+          spotifyService.getRelatedArtistsPublic(artistId)
+        ]);
+
+        setArtistData(artistData);
+        setTopTracks(tracks);
+        setRelatedArtists(related);
+      } catch (err) {
+        console.error('Error loading Spotify data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load artist data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSpotifyData();
+  }, [artistId]);
+
+  // Update the Latest Release section
+  const renderLatestRelease = () => {
+    if (!topTracks.length) return null;
+
+    const latestTrack = topTracks[0];
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Latest release</Text>
+        <View style={styles.latestReleaseContainer}>
+          <View style={styles.latestReleaseCard}>
+            <Image 
+              source={{ uri: latestTrack.album.images[0]?.url }} 
+              style={styles.latestReleaseImage} 
+            />
+            <View style={styles.latestReleaseOverlay}>
+              <View style={styles.latestReleaseInfo}>
+                <View style={styles.postedByContainer}>
+                  {artistData?.images[0]?.url && (
+                    <Image
+                      source={{ uri: artistData.images[0].url }}
+                      style={styles.postedByAvatar}
+                    />
+                  )}
+                  <Text style={styles.postedByText}>Posted by {artistData?.name}</Text>
+                </View>
+                <View style={styles.albumInfoContainer}>
+                  <View style={styles.albumArtContainer}>
+                    <Image 
+                      source={{ uri: latestTrack.album.images[0]?.url }}
+                      style={styles.albumArtThumbnail}
+                    />
+                  </View>
+                  <View style={styles.albumDetails}>
+                    <Text style={styles.albumTitle}>{latestTrack.name}</Text>
+                    <Text style={styles.albumArtist}>{latestTrack.artists[0]?.name}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // Update the Fan Artists section
+  const renderFanArtists = () => {
+    if (!relatedArtists.length) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Fan of</Text>
+        </View>
+        <View style={styles.fansList}>
+          {relatedArtists.slice(0, 3).map((artist) => (
+            <View key={artist.id} style={styles.fanItem}>
+              <Image 
+                source={{ uri: artist.images[0]?.url }} 
+                style={styles.fanImage} 
+              />
+              <Text style={styles.fanName}>{artist.name}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  // Update the Songs section
+  const renderSongs = () => {
+    if (!topTracks.length) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionHeaderLeft}>
+            <Ionicons name="musical-notes" size={20} color="#1ED760" />
+            <Text style={styles.sectionTitle}>Top Songs</Text>
+          </View>
+        </View>
+        <View style={styles.releasesList}>
+          {topTracks.slice(0, 3).map((track) => (
+            <View key={track.id} style={styles.releaseItem}>
+              <Image 
+                source={{ uri: track.album.images[0]?.url }} 
+                style={styles.releaseImage} 
+              />
+              <View style={styles.releaseInfo}>
+                <Text style={styles.releaseTitle}>{track.name}</Text>
+                <Text style={styles.releaseArtist}>
+                  {track.album.name} • {track.artists[0]?.name}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF3B30" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+        <Text style={{ color: '#FF3B30', textAlign: 'center' }}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -214,43 +365,7 @@ export default function ArtistProfileScreen() {
         <View style={styles.divider} />
         
         {/* Latest Release Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Latest release</Text>
-          <View style={styles.latestReleaseContainer}>
-            <View style={styles.latestReleaseCard}>
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop' }} 
-                style={styles.latestReleaseImage} 
-              />
-              <View style={styles.latestReleaseOverlay}>
-                <View style={styles.latestReleaseInfo}>
-                  <View style={styles.postedByContainer}>
-                    <Image
-                      source={require('../assets/images/avril.png')}
-                      style={styles.postedByAvatar}
-                    />
-                    <Text style={styles.postedByText}>Posted by Artist</Text>
-                  </View>
-                  <View style={styles.albumInfoContainer}>
-                    <View style={styles.albumArtContainer}>
-                      <Image
-                        source={{ uri: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop' }}
-                        style={styles.albumArtThumbnail}
-                      />
-                    </View>
-                    <View style={styles.albumDetails}>
-                      <Text style={styles.albumTitle}>The Car</Text>
-                      <Text style={styles.albumType}>Album</Text>
-                    </View>
-                    <TouchableOpacity style={styles.albumArrow}>
-                      <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
+        {renderLatestRelease()}
         
         <View style={styles.divider} />
         
@@ -383,46 +498,7 @@ export default function ArtistProfileScreen() {
         <View style={styles.divider} />
         
         {/* Fan Of Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fan of</Text>
-            <TouchableOpacity 
-              style={styles.showAllButton}
-              onPress={() => router.push({
-                pathname: '/fans',
-                params: { bandId: id }
-              })}
-            >
-              <Text style={styles.sectionHeaderRight}>Show all</Text>
-              <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.fanOfContainer}>
-            <View style={styles.fanItem}>
-              <Image 
-                source={require('../assets/images/drummer.png')} 
-                style={styles.fanImage} 
-              />
-              <Text style={styles.fanName}>Freddie</Text>
-            </View>
-            
-            <View style={styles.fanItem}>
-              <Image 
-                source={require('../assets/images/artic.png')} 
-                style={styles.fanImage} 
-              />
-              <Text style={styles.fanName}>David Bowie</Text>
-            </View>
-            
-            <View style={styles.fanItem}>
-              <Image 
-                source={require('../assets/images/avril.png')} 
-                style={styles.fanImage} 
-              />
-              <Text style={styles.fanName}>Nirvana</Text>
-            </View>
-          </View>
-        </View>
+        {renderFanArtists()}
         
         <View style={styles.divider} />
         
@@ -512,72 +588,7 @@ export default function ArtistProfileScreen() {
         <View style={styles.divider} />
         
         {/* Songs Viktor Knows Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderLeft}>
-              <Ionicons name="musical-notes" size={20} color="#1ED760" />
-              <Text style={styles.sectionTitle}>Songs Viktor Knows</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.showAllButton}
-              onPress={() => router.push({
-                pathname: '/songs-we-know',
-                params: { bandId: id }
-              })}
-            >
-              <Text style={styles.sectionHeaderRight}>Show all</Text>
-              <Ionicons name="chevron-forward" size={16} color="#B3B3B3" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.songsList}>
-            <View style={styles.songItem}>
-              <Image 
-                source={require('../assets/images/artic.png')} 
-                style={styles.songImage} 
-              />
-              <View style={styles.songInfo}>
-                <Text style={styles.songTitle}>Live Forever - Remastered</Text>
-                <Text style={styles.songArtist}>Oasis</Text>
-              </View>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-vertical" size={24} color="#B3B3B3" />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.songItem}>
-              <Image 
-                source={require('../assets/images/avril.png')} 
-                style={styles.songImage} 
-              />
-              <View style={styles.songInfo}>
-                <Text style={styles.songTitle}>This Charming Man - 2011 Remaster</Text>
-                <Text style={styles.songArtist}>The Smiths</Text>
-              </View>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-vertical" size={24} color="#B3B3B3" />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.songItem}>
-              <Image 
-                source={require('../assets/images/drummer.png')} 
-                style={styles.songImage} 
-              />
-              <View style={styles.songInfo}>
-                <Text style={styles.songTitle}>Lucky Man</Text>
-                <Text style={styles.songArtist}>The Verve</Text>
-              </View>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-vertical" size={24} color="#B3B3B3" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <TouchableOpacity style={styles.seeDiscographyButton}>
-            <Text style={styles.seeDiscographyText}>See all songs</Text>
-          </TouchableOpacity>
-        </View>
+        {renderSongs()}
         
         <View style={styles.divider} />
         
@@ -940,13 +951,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-  albumType: {
+  albumArtist: {
     fontFamily: 'Poppins-Medium',
     fontSize: 13,
     color: 'rgba(255,255,255,0.7)',
-  },
-  albumArrow: {
-    padding: 4,
   },
   showAllButton: {
     flexDirection: 'row',
@@ -1040,5 +1048,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins',
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.64)',
+  },
+  loadingText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#B3B3B3',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  fansList: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
   },
 });

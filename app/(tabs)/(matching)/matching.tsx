@@ -22,6 +22,11 @@ import { Asset } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Swipeable } from 'react-native-gesture-handler';
 import ReportConfirmationModal from '../../../components/ui/ReportConfirmationModal';
+import { Profile } from '../../../types/profile';
+import { testUsers } from '../../../data/testUsers';
+
+// Default avatar for fallback
+const defaultAvatar = require('../../../assets/images/avatar.png');
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.15;
@@ -31,20 +36,6 @@ const ROTATION_ANGLE = 8;
 const LIKE_COLOR = '#6BFF90'; // WindSurf greenFlag color
 const NOPE_COLOR = '#F41857'; // WindSurf redFlag color
 const SUPER_LIKE_COLOR = '#007AFF'; // Existing super like color
-
-type Profile = {
-  id: string;
-  name: string;
-  type: 'band' | 'artist';
-  location: string;
-  distance: number;
-  matchPercent: number;
-  genres: string[];
-  commonMatches: number;
-  bio?: string;
-  image: any; // Allow require() image source
-  monthlyViews?: number;
-};
 
 const sharedStyles = StyleSheet.create({
   text: {
@@ -69,6 +60,9 @@ export default function MatchingScreen() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [profileToReport, setProfileToReport] = useState<Profile | null>(null);
+
+  // Define profiles from testUsers
+  const profiles = testUsers;
 
   // Animated values
   const translateX = useSharedValue(0);
@@ -183,7 +177,7 @@ export default function MatchingScreen() {
         },
         () => {
           runOnJS(handleSwipeComplete)(direction);
-          runOnJS(setSwiping)(false);
+          runOnJS(handleSwipingEnd)();
         }
       );
     } else if (direction === 'up') {
@@ -199,7 +193,7 @@ export default function MatchingScreen() {
         },
         () => {
           runOnJS(handleSwipeComplete)(direction);
-          runOnJS(setSwiping)(false);
+          runOnJS(handleSwipingEnd)();
         }
       );
     }
@@ -215,14 +209,28 @@ export default function MatchingScreen() {
     // Provide haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
+    // Navigate to the appropriate profile screen based on type
+    const route = profile.type === 'artist' ? '/artist-profile' : '/band-profile';
     router.push({
-      pathname: profile.type === 'artist' ? '/artist-profile' : '/band-profile',
+      pathname: route,
       params: { 
         id: profile.id,
-        name: profile.name,
-        type: profile.type
+        name: profile.name
       }
     });
+  };
+
+  // Function to handle card tap
+  const handleCardTap = () => {
+    const profile = profiles[currentIndex];
+    if (profile) {
+      navigateToProfile(profile);
+    }
+  };
+
+  // Function to handle the end of swiping
+  const handleSwipingEnd = () => {
+    setSwiping(false);
   };
 
   // Pan gesture handler
@@ -377,7 +385,7 @@ export default function MatchingScreen() {
         nextCardOpacity.value = withSpring(0.85);
       }
       
-      runOnJS(setSwiping)(false);
+      runOnJS(handleSwipingEnd)();
     });
 
   // Tap gesture handler
@@ -387,9 +395,7 @@ export default function MatchingScreen() {
     .maxDistance(10)
     .onStart(() => {
       'worklet';
-      const profile = profiles[currentIndex];
-      if (!profile) return;
-      runOnJS(navigateToProfile)(profile);
+      runOnJS(handleCardTap)();
     });
 
   // Allow both gestures to work independently
@@ -401,9 +407,9 @@ export default function MatchingScreen() {
   // Card animated style
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { rotate: `${rotate.value}deg` },
+      { translateX: translateX.value || 0 },
+      { translateY: translateY.value || 0 },
+      { rotate: `${rotate.value || 0}deg` },
     ],
     zIndex: 1000,
   }));
@@ -412,9 +418,9 @@ export default function MatchingScreen() {
   const nextCardAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { scale: nextCardScale.value }
+        { scale: nextCardScale.value || 0.92 }
       ],
-      opacity: nextCardOpacity.value
+      opacity: nextCardOpacity.value || 0.85
     };
   });
 
@@ -483,10 +489,16 @@ export default function MatchingScreen() {
         {profiles.map((profile, index) => {
           if (index < currentIndex || index > currentIndex + 1) return null;
           
+          // Safety check for profile
+          if (!profile) return null;
+          
           const isCurrentCard = index === currentIndex;
           const cardStyle = isCurrentCard ? 
             [styles.card, cardAnimatedStyle] : 
             [styles.card, nextCardAnimatedStyle];
+          
+          // Ensure we have a valid image reference
+          const imageSource = profile.image || defaultAvatar;
           
           return (
             <View 
@@ -500,7 +512,7 @@ export default function MatchingScreen() {
                 <GestureDetector gesture={combinedGesture}>
                   <Animated.View style={cardStyle}>
                     <Image
-                      source={profile.image}
+                      source={imageSource}
                       style={styles.cardBackground}
                       resizeMode="cover"
                       fadeDuration={0}
@@ -512,7 +524,7 @@ export default function MatchingScreen() {
               ) : (
                 <Animated.View style={cardStyle}>
                   <Image
-                    source={profile.image}
+                    source={imageSource}
                     style={styles.cardBackground}
                     resizeMode="cover"
                     fadeDuration={0}
@@ -597,7 +609,6 @@ export default function MatchingScreen() {
     );
   };
 
-  // Add gradient overlays
   const renderOverlays = (isTopCard: boolean) => {
     if (!isTopCard) return null;
     
@@ -607,7 +618,7 @@ export default function MatchingScreen() {
           style={[
             styles.overlayContainer,
             {
-              opacity: likeOpacity,
+              opacity: likeOpacity.value || 0,
               borderColor: LIKE_COLOR,
             }
           ]}
@@ -619,7 +630,7 @@ export default function MatchingScreen() {
           style={[
             styles.overlayContainer,
             {
-              opacity: nopeOpacity,
+              opacity: nopeOpacity.value || 0,
               borderColor: NOPE_COLOR,
             }
           ]}
@@ -631,7 +642,7 @@ export default function MatchingScreen() {
           style={[
             styles.overlayContainer,
             {
-              opacity: superLikeOpacity,
+              opacity: superLikeOpacity.value || 0,
               borderColor: SUPER_LIKE_COLOR,
             }
           ]}
@@ -641,48 +652,6 @@ export default function MatchingScreen() {
       </>
     );
   };
-
-  const profiles: Profile[] = [
-    {
-      id: 'avril-123',
-      name: 'Avril',
-      type: 'artist',
-      location: 'Los Angeles, CA',
-      distance: 33,
-      matchPercent: 64,
-      genres: ['Pop', 'Rock', 'Alternative'],
-      commonMatches: 4,
-      bio: 'Lead vocalist and guitarist. Into pop punk and rock.',
-      image: require('../../../assets/images/avril.png'),
-      monthlyViews: 528
-    },
-    {
-      id: 'drummer-456',
-      name: 'Travis Barker',
-      type: 'artist',
-      location: 'San Francisco, CA',
-      distance: 15,
-      matchPercent: 78,
-      genres: ['Punk Rock', 'Hip Hop', 'Rock'],
-      commonMatches: 2,
-      bio: 'Drummer. Collaborating with artists across genres from punk rock to hip hop.',
-      image: require('../../../assets/images/drummer.png'),
-      monthlyViews: 412
-    },
-    {
-      id: 'artic-789',
-      name: 'Arctic Monkeys',
-      type: 'band',
-      location: 'New York, NY',
-      distance: 42,
-      matchPercent: 91,
-      genres: ['Indie Rock', 'Alternative', 'Rock'],
-      commonMatches: 6,
-      bio: 'Looking for a lead guitarist. Must love indie rock.',
-      image: require('../../../assets/images/artic.png'),
-      monthlyViews: 743
-    }
-  ];
 
   return (
     <GestureHandlerRootView style={{flex: 1, backgroundColor: '#121212'}}>

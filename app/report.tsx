@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,13 +8,19 @@ import {
   Image, 
   Platform,
   ScrollView,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Modal,
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
+
+// hCaptcha site key from .env file
+const HCAPTCHA_SITE_KEY = '05309e38-3a22-466e-803a-a9d0a60c065a';
 
 // Define types for the report reason
 interface ReportReason {
@@ -46,6 +52,28 @@ const REPORT_REASONS: ReportReason[] = [
   }
 ];
 
+// Generate random math problem
+const generateMathProblem = () => {
+  const num1 = Math.floor(Math.random() * 10) + 1;
+  const num2 = Math.floor(Math.random() * 10) + 1;
+  const operation = Math.random() > 0.5 ? '+' : '-';
+  
+  let answer;
+  if (operation === '+') {
+    answer = num1 + num2;
+  } else {
+    // Ensure we don't have negative answers
+    if (num1 >= num2) {
+      answer = num1 - num2;
+    } else {
+      answer = num2 - num1;
+      return { num1: num2, num2: num1, operation, answer };
+    }
+  }
+  
+  return { num1, num2, operation, answer };
+};
+
 export default function ReportScreen() {
   const params = useLocalSearchParams<{
     userName?: string;
@@ -58,6 +86,17 @@ export default function ReportScreen() {
   const [note, setNote] = useState<string>('');
   const [showReasonDropdown, setShowReasonDropdown] = useState<boolean>(false);
   const [isHuman, setIsHuman] = useState<boolean>(false);
+  const [showCaptcha, setShowCaptcha] = useState<boolean>(false);
+  const [verifying, setVerifying] = useState<boolean>(false);
+  const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
+  
+  // Captcha state
+  const [mathProblem, setMathProblem] = useState(generateMathProblem());
+  const [userAnswer, setUserAnswer] = useState('');
+  const [captchaError, setCaptchaError] = useState('');
+  
+  // Animation for progress bar
+  const progressAnim = useRef(new Animated.Value(1)).current;
   
   // Character count for note
   const maxCharacters = 500;
@@ -66,7 +105,7 @@ export default function ReportScreen() {
   const handleConfirm = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Here you would submit the report
-    // For now, just navigate back
+    console.log('Report submitted');
     router.back();
   };
   
@@ -81,6 +120,69 @@ export default function ReportScreen() {
     setShowReasonDropdown(false);
   };
   
+  const handleCaptchaVerify = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setVerifying(true);
+    setMathProblem(generateMathProblem());
+    setUserAnswer('');
+    setCaptchaError('');
+    setShowCaptcha(true);
+  };
+  
+  const handleCaptchaSubmit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    if (userAnswer.trim() === '') {
+      setCaptchaError('Please enter your answer');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    
+    const parsedAnswer = parseInt(userAnswer.trim(), 10);
+    if (isNaN(parsedAnswer)) {
+      setCaptchaError('Please enter a valid number');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    
+    if (parsedAnswer === mathProblem.answer) {
+      // Correct answer
+      setIsHuman(true);
+      setShowCaptcha(false);
+      setVerifying(false);
+      setShowVerificationSuccess(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Reset and start the progress animation
+      progressAnim.setValue(1);
+      Animated.timing(progressAnim, {
+        toValue: 0,
+        duration: 2000,
+        useNativeDriver: false,
+      }).start();
+      
+      // Auto-hide success message after 2 seconds
+      setTimeout(() => {
+        setShowVerificationSuccess(false);
+        // Add a subtle haptic feedback when the success message disappears
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }, 2000);
+    } else {
+      // Wrong answer
+      setCaptchaError('Incorrect answer, please try again');
+      setMathProblem(generateMathProblem());
+      setUserAnswer('');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  };
+  
+  const refreshCaptcha = () => {
+    setMathProblem(generateMathProblem());
+    setUserAnswer('');
+    setCaptchaError('');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+  
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -88,6 +190,103 @@ export default function ReportScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <StatusBar style="light" />
+      
+      {/* Verification Success Modal */}
+      <Modal
+        visible={showVerificationSuccess}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.captchaModalContainer}>
+          <View style={styles.verificationSuccessContent}>
+            <View style={styles.verificationSuccessIcon}>
+              <Ionicons name="checkmark-circle" size={64} color="#6BFF90" />
+            </View>
+            <Text style={styles.verificationSuccessTitle}>Verification Complete</Text>
+            <Text style={styles.verificationSuccessText}>
+              Thank you for verifying you're human
+            </Text>
+            <View style={styles.verificationProgressBar}>
+              <Animated.View 
+                style={[
+                  styles.verificationProgressFill,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                    })
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Captcha Modal */}
+      <Modal
+        visible={showCaptcha}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.captchaModalContainer}>
+          <View style={styles.captchaModalContent}>
+            <View style={styles.captchaModalHeader}>
+              <Text style={styles.captchaModalTitle}>Human Verification</Text>
+              <TouchableOpacity 
+                style={styles.captchaModalClose}
+                onPress={() => {
+                  setShowCaptcha(false);
+                  setVerifying(false);
+                }}
+              >
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.captchaContent}>
+              <Text style={styles.captchaTitle}>Solve this math problem</Text>
+              <Text style={styles.mathProblem}>
+                {mathProblem.num1} {mathProblem.operation} {mathProblem.num2} = ?
+              </Text>
+              
+              <TextInput
+                style={styles.captchaInput}
+                value={userAnswer}
+                onChangeText={setUserAnswer}
+                keyboardType="number-pad"
+                placeholder="Enter your answer"
+                placeholderTextColor="rgba(255, 255, 255, 0.48)"
+                autoFocus
+              />
+              
+              {captchaError ? (
+                <Text style={styles.captchaError}>{captchaError}</Text>
+              ) : null}
+              
+              <View style={styles.captchaActions}>
+                <TouchableOpacity 
+                  style={styles.captchaRefreshButton}
+                  onPress={refreshCaptcha}
+                >
+                  <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.captchaSubmitButton}
+                  onPress={handleCaptchaSubmit}
+                >
+                  <Text style={styles.captchaSubmitText}>Verify</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.captchaFooter}>
+                This verification helps keep BandMate safe
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
       
       {/* Header with back button and title */}
       <View style={styles.header}>
@@ -201,33 +400,45 @@ export default function ReportScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Are you human?</Text>
           <TouchableOpacity
-            style={[styles.captchaButton, isHuman && styles.captchaButtonActive]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsHuman(!isHuman);
-            }}
+            style={[
+              styles.captchaButton, 
+              isHuman && styles.captchaButtonActive,
+              verifying && styles.captchaButtonVerifying
+            ]}
+            onPress={handleCaptchaVerify}
+            disabled={isHuman || verifying}
           >
             <View style={styles.captchaImage}>
               {/* hCaptcha-inspired UI */}
               <View style={styles.hCaptchaContainer}>
                 <View style={styles.hCaptchaHeader}>
-                  <Text style={styles.hCaptchaText}>hCaptcha</Text>
+                  <Text style={styles.hCaptchaText}>BandMate Verify</Text>
                   <View style={styles.hCaptchaPrivacy}>
                     <Ionicons name="shield-checkmark" size={12} color="#6BFF90" />
                     <Text style={styles.hCaptchaPrivacyText}>Privacy</Text>
                   </View>
                 </View>
                 
-                <View style={styles.hCaptchaCheckbox}>
-                  {isHuman ? (
+                <View style={[
+                  styles.hCaptchaCheckbox,
+                  isHuman && styles.hCaptchaCheckboxVerified,
+                  verifying && styles.hCaptchaCheckboxVerifying
+                ]}>
+                  {verifying ? (
+                    <ActivityIndicator size="small" color="#FF3B30" />
+                  ) : isHuman ? (
                     <Ionicons name="checkmark" size={20} color="#6BFF90" />
                   ) : (
                     <View style={{ width: 20, height: 20 }} />
                   )}
                 </View>
                 
-                <Text style={styles.hCaptchaLabel}>
-                  I am human
+                <Text style={[
+                  styles.hCaptchaLabel,
+                  isHuman && styles.hCaptchaLabelVerified,
+                  verifying && styles.hCaptchaLabelVerifying
+                ]}>
+                  {verifying ? "Verifying..." : isHuman ? "Verified" : "I am human"}
                 </Text>
                 
                 <View style={styles.hCaptchaFooter}>
@@ -235,11 +446,18 @@ export default function ReportScreen() {
                     <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" 
                       fill="#FFFFFF" fillOpacity="0.48" />
                   </Svg>
-                  <Text style={styles.hCaptchaFooterText}>hCaptcha Protected</Text>
+                  <Text style={styles.hCaptchaFooterText}>BandMate Protected</Text>
                 </View>
               </View>
             </View>
           </TouchableOpacity>
+          
+          {isHuman && (
+            <View style={styles.verificationStatusContainer}>
+              <Ionicons name="checkmark-circle" size={16} color="#6BFF90" />
+              <Text style={styles.verificationStatusText}>Verification complete</Text>
+            </View>
+          )}
         </View>
         
         {/* Bottom spacing */}
@@ -301,90 +519,80 @@ const styles = StyleSheet.create({
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 14,
-    backgroundColor: 'rgba(18, 18, 18, 0.64)',
-    backdropFilter: 'blur(16px)',
+    justifyContent: 'center',
+    paddingVertical: 16,
   },
   progressStep: {
-    width: 30,
-    height: 30,
-    borderRadius: 9999, 
-    backgroundColor: '#FF3B30', 
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FF3B30',
     alignItems: 'center',
     justifyContent: 'center',
   },
   progressStepText: {
     fontFamily: 'Poppins',
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '500',
-    lineHeight: 16,
-    color: '#121212',
+    color: '#FFFFFF',
   },
   progressLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#FF3B30', 
+    width: 40,
+    height: 2,
+    backgroundColor: '#FF3B30',
+    marginHorizontal: 8,
   },
   scrollContainer: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingHorizontal: 16,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontFamily: 'Poppins',
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '500',
-    lineHeight: 21,
-    letterSpacing: -0.5,
-    color: '#FFFFFF',
-    marginBottom: 16,
+    lineHeight: 20,
+    color: 'rgba(255, 255, 255, 0.48)',
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: 12, 
-    backdropFilter: 'blur(16px)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 16,
   },
   userImage: {
-    width: 44,
-    height: 40,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
   },
   userInfo: {
-    marginLeft: 12,
     flex: 1,
   },
   userName: {
     fontFamily: 'Poppins',
     fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 19,
-    letterSpacing: -0.5,
-    color: '#FFFFFF', 
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
   userType: {
     fontFamily: 'Poppins',
     fontSize: 14,
-    fontWeight: '400',
-    lineHeight: 17,
-    letterSpacing: -0.5,
-    color: 'rgba(255, 255, 255, 0.48)', 
+    color: 'rgba(255, 255, 255, 0.48)',
   },
   reasonSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: 12, 
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 8,
-    backdropFilter: 'blur(16px)',
   },
   reasonInfo: {
     flex: 1,
@@ -392,28 +600,23 @@ const styles = StyleSheet.create({
   reasonTitle: {
     fontFamily: 'Poppins',
     fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 19,
-    letterSpacing: -0.5,
-    color: '#FFFFFF', 
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   reasonDescription: {
     fontFamily: 'Poppins',
     fontSize: 14,
-    fontWeight: '400',
-    lineHeight: 17,
-    letterSpacing: -0.5,
-    color: 'rgba(255, 255, 255, 0.48)', 
+    color: 'rgba(255, 255, 255, 0.48)',
   },
   reasonDropdown: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: 12, 
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
     marginBottom: 8,
     overflow: 'hidden',
-    backdropFilter: 'blur(16px)',
   },
   reasonOption: {
-    padding: 12,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
@@ -423,18 +626,14 @@ const styles = StyleSheet.create({
   reasonOptionTitle: {
     fontFamily: 'Poppins',
     fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 19,
-    letterSpacing: -0.5,
-    color: '#FFFFFF', 
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   reasonOptionDescription: {
     fontFamily: 'Poppins',
     fontSize: 14,
-    fontWeight: '400',
-    lineHeight: 17,
-    letterSpacing: -0.5,
-    color: 'rgba(255, 255, 255, 0.48)', 
+    color: 'rgba(255, 255, 255, 0.48)',
   },
   infoRow: {
     flexDirection: 'row',
@@ -444,48 +643,53 @@ const styles = StyleSheet.create({
   infoText: {
     fontFamily: 'Poppins',
     fontSize: 12,
-    fontWeight: '300',
-    lineHeight: 18,
-    color: 'rgba(255, 255, 255, 0.48)', 
+    color: '#828282',
     marginLeft: 4,
   },
   noteInput: {
-    padding: 12,
-    height: 104,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 16,
     fontFamily: 'Poppins',
-    fontSize: 16,
-    fontWeight: '300',
-    lineHeight: 24,
-    color: '#FFFFFF', 
+    fontSize: 14,
+    color: '#FFFFFF',
+    minHeight: 120,
     textAlignVertical: 'top',
   },
   captchaButton: {
-    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   captchaButtonActive: {
-    opacity: 0.8,
+    backgroundColor: 'rgba(107, 255, 144, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(107, 255, 144, 0.24)',
+  },
+  captchaButtonVerifying: {
+    backgroundColor: 'rgba(255, 59, 48, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.24)',
   },
   captchaImage: {
-    width: 200,
+    width: '100%',
     height: 120,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: 'center',
   },
   hCaptchaContainer: {
-    width: '100%',
-    height: '100%',
-    padding: 8,
-    justifyContent: 'space-between',
+    width: 300,
+    backgroundColor: '#1D1D1D',
+    borderRadius: 8,
+    padding: 12,
   },
   hCaptchaHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   hCaptchaText: {
     fontFamily: 'Poppins',
@@ -499,7 +703,7 @@ const styles = StyleSheet.create({
   },
   hCaptchaPrivacyText: {
     fontFamily: 'Poppins',
-    fontSize: 10,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.48)',
     marginLeft: 4,
   },
@@ -507,29 +711,52 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.24)',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  hCaptchaCheckboxVerified: {
+    backgroundColor: 'rgba(107, 255, 144, 0.16)',
+    borderColor: 'rgba(107, 255, 144, 0.48)',
+  },
+  hCaptchaCheckboxVerifying: {
+    backgroundColor: 'rgba(255, 59, 48, 0.16)',
+    borderColor: 'rgba(255, 59, 48, 0.48)',
   },
   hCaptchaLabel: {
     fontFamily: 'Poppins',
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.64)',
-    textAlign: 'center',
-    marginTop: 4,
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  hCaptchaLabelVerified: {
+    color: '#6BFF90',
+  },
+  hCaptchaLabelVerifying: {
+    color: '#FF3B30',
   },
   hCaptchaFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   hCaptchaFooterText: {
     fontFamily: 'Poppins',
-    fontSize: 10,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.48)',
+    marginLeft: 4,
+  },
+  verificationStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  verificationStatusText: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: '#6BFF90',
     marginLeft: 4,
   },
   bottomContainer: {
@@ -537,39 +764,176 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 8,
-    backgroundColor: 'rgba(18, 18, 18, 0.9)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(18, 18, 18, 0.64)',
     backdropFilter: 'blur(16px)',
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 16,
+    alignItems: 'center',
   },
   confirmButton: {
-    width: 240,
-    height: 48, 
-    borderRadius: 9999, 
-    backgroundColor: '#FF3B30', 
+    width: '100%',
+    height: 48,
+    backgroundColor: '#FF3B30',
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
-    paddingHorizontal: 16, 
   },
   confirmButtonDisabled: {
-    opacity: 0.48, 
+    backgroundColor: 'rgba(255, 59, 48, 0.48)',
   },
   confirmButtonText: {
     fontFamily: 'Poppins',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '500',
-    lineHeight: 22,
-    letterSpacing: -0.2,
-    color: '#000000',
+    color: '#FFFFFF',
   },
   footerText: {
     fontFamily: 'Poppins',
-    fontSize: 10,
-    fontWeight: '400',
-    lineHeight: 12,
-    color: 'rgba(255, 255, 255, 0.48)', 
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.48)',
+  },
+  captchaModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captchaModalContent: {
+    width: '90%',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  captchaModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  captchaModalTitle: {
+    fontFamily: 'Poppins',
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  captchaModalClose: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captchaContent: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  captchaTitle: {
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 20,
+  },
+  mathProblem: {
+    fontFamily: 'Poppins',
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 20,
+  },
+  captchaInput: {
+    width: '100%',
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 12,
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    color: '#FFFFFF',
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  captchaError: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: '#F41857',
+    marginBottom: 12,
+  },
+  captchaActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 12,
+  },
+  captchaRefreshButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captchaSubmitButton: {
+    height: 48,
+    paddingHorizontal: 24,
+    borderRadius: 9999,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captchaSubmitText: {
+    fontFamily: 'Poppins',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  captchaFooter: {
+    fontFamily: 'Poppins',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.48)',
+    marginTop: 20,
+  },
+  verificationSuccessContent: {
+    width: '80%',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(107, 255, 144, 0.24)',
+  },
+  verificationSuccessIcon: {
+    marginBottom: 16,
+  },
+  verificationSuccessTitle: {
+    fontFamily: 'Poppins',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  verificationSuccessText: {
+    fontFamily: 'Poppins',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.64)',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  verificationProgressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  verificationProgressFill: {
+    height: '100%',
+    backgroundColor: '#6BFF90',
+    borderRadius: 2,
   },
 });
